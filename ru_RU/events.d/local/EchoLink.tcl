@@ -17,7 +17,24 @@
 # but it must be changed in both places.
 #
 namespace eval EchoLink {
-	
+
+# Для эхолинка
+# Произносит число и добавляет (1 подключенная станция = "", 2...4 подключенные станции - ""+1, 5... подключенных станций = ""+s)
+proc playQuantityConnectedStations {qty} {
+  if {$qty == 0} {
+    playMsg "0"
+    playMsg "connected_stations"
+  } elseif {$qty == 1} {
+    playMsg "1f"
+    playMsg "connected_station"
+  } elseif {$qty <= 4} {
+    playMsg "${qty}f"
+    playMsg "connected_station1"
+  } else {
+    playMsg $qty
+    playMsg "connected_stations"
+  }
+}	
 
 proc status_report {} {
   variable num_connected_stations;
@@ -25,7 +42,8 @@ proc status_report {} {
   global active_module;
  
   if {$active_module == $module_name} {
-    speakNumber "EchoLink" $num_connected_stations "connected_station"
+    #speakNumber "EchoLink" $num_connected_stations "connected_station"
+    playQuantityConnectedStations $num_connected_stations
     playSilence 200
   }
 }
@@ -35,7 +53,9 @@ proc status_report {} {
 # That is, someone press DTMF "1#" when the EchoLink module is active.
 #
 proc list_connected_stations {connected_stations} {
-  speakNumber "EchoLink" [llength $connected_stations] "connected_station";
+  #speakNumber "EchoLink" [llength $connected_stations] "connected_station";
+  playQuantityConnectedStations $num_connected_stations
+  
   if {[llength $connected_stations] != 0} {
     playSilence 50;
     playMsg "connected_station_list";
