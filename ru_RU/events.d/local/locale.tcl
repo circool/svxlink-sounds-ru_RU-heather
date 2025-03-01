@@ -1,182 +1,90 @@
 ###############################################################################
-#
-# Locale specific functions for playing back time, numbers and spelling words.
-# Often, the functions in this file are the only ones that have to be
-# reimplemented for a new language pack.
-#
-###############################################################################
 # Руский синтаксис для воспроизведения времени
 # by R2ADU
-
-###############################################################################
-# Speak number and measure units
-###############################################################################
-
-
-
-proc speakNumber {module_name value unit} {
-  if {$value<0} {
-    playMsg "MetarInfo" "minus";
-    set value [expr abs($value)];
-  }
-  if {[regexp {(\d+)\.(\d+)?} $value -> integer fraction]} {
-    speakNumber $module_name $integer "integer";
-    playMsg "Default" "and";
-    if {[string length $fraction] == 2} {
-      speakNumber $module_name $fraction "hundredth"
-    } else {
-      speakNumber $module_name $fraction "tenth"
-    }
-    if {$unit != ""} {
-      append unit "1"
-      playMsg $module_name "$unit"
-    }
-    return;
-  }
-  regexp {^0*(\d+)} $value _dummy value
-  if {$unit=="minute" || $unit=="thousand" || $unit=="unit_mph" || $unit=="integer" || $unit=="tenth" || $unit=="hundredth" || $unit=="connected_station"} {
-    set gender "f" 
-  } else {
-    set gender ""
-  }
-  if {$unit != ""} {
-    append unit [getCase $value]
-  }
-  if {$value>999} {
-    set x_tmp [expr $value / 1000]
-    speakNumber "Default" $x_tmp "thousand"
-    append x_tmp "000"
-    set value [expr $value - $x_tmp]
-    if {$value == 0} {return}
-  }
-  if {$value>99} {
-    set x_tmp [expr [string index $value 0]*100]
-    playMsg "Default" $x_tmp
-    set value [expr $value-$x_tmp]
-    if {$value == 0} {return}
-  }
-  if {$value <= 20} {
-    set x_tmp [expr int($value)]
-    if {$value == 1 || $value == 2} {append x_tmp $gender}
-    playMsg "Default" $x_tmp
-  } else {
-    set x_tmp [expr [string index $value 0]*10]
-    playMsg "Default" $x_tmp
-    set value [expr $value-$x_tmp]
-    if {$value !=0} {
-      if {$value == 1 || $value == 2} {append value $gender}
-      playMsg "Default" $value
-    }
-  }
-  if {$unit != ""} {
-    playMsg $module_name $unit
-  }
-}
-
-############################################################################################################
-# Returns the digit modifier according to case 
-############################################################################################################
-proc getCase {value} {
-  if {[string length $value] > 2 } {   
-    set value [string range $value [string length $value]-2 [string length $value]]
-  }
-  if {[string length $value] == 2 } {
-    if {([string index $value 0] == 1)} {return "s" } else {set value [string index $value 1]}
-  }
-  if {($value == 0) || ($value >= 5) } {return "s"}
-  if {($value >= 2) && ($value <= 4) } {return "1"} else {return ""}  
-}
-
-############################################################################################################
-# Say the time specified by function arguments "hour" and "minute".
-############################################################################################################
+# Процедура для формирования строки времени (без текстовых представлений)
 proc playTime {hour minute} {
-  variable Logic::CFG_TIME_FORMAT
-# Strip white space and leading zeros. Check ranges.
-  if {[scan $hour "%d" hour] != 1 || $hour < 0 || $hour > 23} {
-    error "playTime: Non digit hour or value out of range: $hour"
-  }
-  if {[scan $minute "%d" minute] != 1 || $minute < 0 || $minute > 59} {
-    error "playTime: Non digit minute or value out of range: $minute"
-  }
-  if {[info exists CFG_TIME_FORMAT] && ($CFG_TIME_FORMAT == 12)} {
-    if {$hour < 12} {
-      set ampm "AM";
-      if {$hour == 0} {
-        set hour 12;
-      }
+
+    variable Logic::CFG_TIME_FORMAT
+    # Проверка корректности формата времени
+    if {$CFG_TIME_FORMAT != 12 && $CFG_TIME_FORMAT != 24} {
+        error "Ошибка: CFG_TIME_FORMAT должен быть 12 или 24"
+    }
+
+    # Корректировка часа для 12-часового формата
+    if {$CFG_TIME_FORMAT == 12} {
+        if {$hour == 0} {
+            set hour 12
+            set ampm "AM"
+        } elseif {$hour < 12} {
+            set ampm "AM"
+        } else {
+            if {$hour > 12} {
+                set hour [expr {$hour - 12}]
+            }
+            set ampm "PM"
+        }
+    }
+
+    # Обработка часов
+    if {$hour == 0} {
+        playMsg "Default" "0"
+        playMsg "Default" "hours"
+    } elseif {$hour == 1} {
+        playMsg "Default" "1"
+        playMsg "Default" "hour"
+    } elseif {$hour >= 2 && $hour <= 4} {
+        playMsg "Default" $hour
+        playMsg "Default" "hour1"
+    } elseif {$hour >= 5 && $hour <= 20} {
+        playMsg "Default" $hour
+        playMsg "Default" "hours"
+    } elseif {$hour >= 21 && $hour <= 24} {
+        set hourTens [expr {$hour / 10}]
+        set hourUnits [expr {$hour % 10}]
+        if {$hourTens > 0} {
+            playMsg "Default" "${hourTens}0"
+        }
+        if {$hourUnits > 0} {
+            playMsg "Default" $hourUnits
+        }
+        if {$hour == 21} {
+            playMsg "Default" "hour"
+        } else {
+            playMsg "Default" "hour1"
+        }
     } else {
-      set ampm "PM";
-      if {$hour > 12} {
-        set hour [expr $hour - 12];
-      }
-    }
-  }
-
-  if {$hour > 20} {
-    playMsg "Default" "[string index $hour 0]X"
-    playMsg "Default" [string index $hour 1]
-  } else {
-      playMsg "Default" $hour
-  }
-    playMsg "Default" "hour[getCase $hour]"
-    if {$minute == 30 || $minute == 40 || $minute == 50} {
-        playMsg "Default" "[string index $minute 0]X"
-        playMsg "Default" "minute[getCase $minute]"
-        return
+        playMsg "Default" $hour
+        playMsg "Default" "hours"
     }
 
-    if {$minute == 00} {
-            playMsg "Default" "[string index $minute 0]"
-            playMsg "Default" "minute[getCase $minute]"
-            return
-    }
-
-    if {$minute > 20} {
-      playMsg "Default" "[string index $minute 0]X"
-      set minute [string index $minute 1]
-    }
-
-    if {$minute > 2} {
-      playMsg "Default" $minute
+    # Обработка минут
+    if {$minute == 0} {
+        playMsg "Default" "equal"
     } else {
-        playMsg "Default" "[string index $minute 0]f"
+        set minuteTens [expr {$minute / 10}]
+        set minuteUnits [expr {$minute % 10}]
+        if {$minute >= 10 && $minute <= 19} {
+            playMsg "Default" $minute
+        } else {
+            if {$minuteTens > 0} {
+                playMsg "Default" "${minuteTens}0"
+            }
+            if {$minuteUnits > 0} {
+                playMsg "Default" "$minuteUnits"
+            }
+        }
+
+        if {$minute % 10 == 1 && $minute != 11} {
+            playMsg "Default" "minute"
+        } elseif {($minute % 10 >= 2 && $minute % 10 <= 4) && ($minute < 10 || $minute > 20)} {
+            playMsg "Default" "minute1"
+        } else {
+            playMsg "Default" "minutes"
+        }
     }
-    if {$minute == 0} {playMsg "Default" "[string index $minute 0]"}
-    playMsg "Default" "minute[getCase $minute]"
 
-    if {[info exists CFG_TIME_FORMAT] && ($CFG_TIME_FORMAT == 12)} {
-        playMsg "Core" $ampm;
-        playSilence 100;
+    # Добавление am/pm для 12-часового формата
+    if {$CFG_TIME_FORMAT == 12} {
+        playMsg "Core" "$ampm"
     }
 }
-
-############################################################################################################
-# Replacing standard pronunciation procedures
-############################################################################################################
-proc playFrequency {fq} {
-  if {$fq < 1000} {
-    set unit "Hz"
-  } elseif {$fq < 1000000} {
-    set fq [expr {$fq / 1000.0}]
-    set unit "kHz"
-  } elseif {$fq < 1000000000} {
-    set fq [expr {$fq / 1000000.0}]
-    set unit "MHz"
-  } else {
-    set fq [expr {$fq / 1000000000.0}]
-    set unit "GHz"
-  }
-   speakNumber "Core" [string trimright [format "%.3f" $fq] ".0"] $unit
-}
-
-proc playNumber {number} {
-  speakNumber "Default" $number ""
-}
-//
-// proc spellNumber {number} {
-//  speakNumber "Default" $number ""
-// }
-
-
-# End russian localisation
