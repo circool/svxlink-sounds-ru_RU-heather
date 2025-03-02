@@ -1,38 +1,49 @@
+# @author vladimir@tsurkanenko.ru
+# aka circool
+# aka R2ADU
+
 namespace eval MetarInfo {
 
-proc speakNumber {msg unit} {
+# Произносит число и единицу измерения
+#   - температура в градусах по Цельсию ("unit_degree") - градус, градуса, градусов
+#   - давление в ГектоПаскалях ("unit_hPa") гектопаскаль, гектопаскаля, гектопаскалей
+#   - скорость ветра в узлах ("unit_kt") - узел, узла, узлов
+#   - период в часах ("hour") - час, часа, часов
+#   - ("unit_mb") - 
+#   - величина в дюймах ("unit_inch") - дюйм, дюйма, дюймов
+proc _speakNumber {msg unit} {
   variable module_name;
   ::speakNumber $module_name $msg $unit;
 }
 
 # no airport defined
-proc no_airport_defined {} {
+proc _no_airport_defined {} {
    playMsg "no_airport_defined";
    playSilence 200;
 }
 # no airport defined
-proc no_such_airport {} {
+proc _no_such_airport {} {
    playMsg "no_such_airport";
    playSilence 200;
 }
 # METAR not valid
-proc metar_not_valid {} {
+proc _metar_not_valid {} {
   playMsg "metar_not_valid";
    playSilence 200;
 }
 # airport is closed due to snow
-proc snowclosed {} {
+proc _snowclosed {} {
    playMag "aiport_closed_due_to_sn";
    playSilence 200;
 }
 # RWY is clear
-proc all_rwy_clear {} {
+proc _all_rwy_clear {} {
   playMsg "all_runways_clr";
   playSilence 200;
 }
 
 # MET-report TIME
-proc metreport_time item {
+proc _metreport_time item {
    playMsg "metreport_time"
    set hr [string range $item 0 1]
    set mn [string range $item 2 3]
@@ -42,7 +53,7 @@ proc metreport_time item {
 
 
 # temperature
-proc temperature {temp} {
+proc _temperature {temp} {
   playMsg "temperature"
   playSilence 100
   if {$temp == "not"} {
@@ -55,7 +66,7 @@ proc temperature {temp} {
 }
 
 # dewpoint
-proc dewpoint {dewpt} {
+proc _dewpoint {dewpt} {
   playMsg "dewpoint"
   playSilence 100
   if {$dewpt == "not"} {
@@ -69,21 +80,21 @@ proc dewpoint {dewpt} {
 }
 
 # sea level pressure
-proc slp {slp} {
+proc _slp {slp} {
   playMsg "slp"
   speakNumber $slp "unit_hPa"
   playSilence 200
 }
 
 # flightlevel
-proc flightlevel {level} {
+proc _flightlevel {level} {
   playMsg "flightlevel"
   speakNumber $level ""
   playSilence 200
 }
 
 # wind
-proc wind {deg {vel 0 } {unit 0} {gusts 0} {gvel 0}} {
+proc _wind {deg {vel 0 } {unit 0} {gusts 0} {gvel 0}} {
   playMsg "wind"
   if {$deg == "calm"} {
     playMsg "calm"
@@ -108,7 +119,7 @@ proc wind {deg {vel 0 } {unit 0} {gusts 0} {gvel 0}} {
 }
 
 # weather actually
-proc actualWX args {
+proc _actualWX args {
   foreach item $args {
     if [regexp {(\d+)} $item] {
       playNumber $item
@@ -120,7 +131,7 @@ proc actualWX args {
 }
 
 # wind varies $from $to
-proc windvaries {from to} {
+proc _windvaries {from to} {
    playMsg "wind"
    playSilence 50
    playMsg "varies_from"
@@ -134,7 +145,7 @@ proc windvaries {from to} {
 }
 
 # Peak WIND
-proc peakwind {deg kts hh mm} {
+proc _peakwind {deg kts hh mm} {
    playMsg "pk_wnd"
    playMsg "from"
    playSilence 100
@@ -152,7 +163,7 @@ proc peakwind {deg kts hh mm} {
 }
 
 # ceiling varies $from $to
-proc ceilingvaries {from to} {
+proc _ceilingvaries {from to} {
    playMsg "ca"
    playSilence 50
    playMsg "varies_from"
@@ -168,7 +179,7 @@ proc ceilingvaries {from to} {
 }
 
 # time
-proc utime {utime} {
+proc _utime {utime} {
    set hr [string range $utime 0 1]
    set mn [string range $utime 2 3]
    playTime $hr $mn
@@ -178,7 +189,7 @@ proc utime {utime} {
 }
 
 # vv100 -> "vertical view (ceiling) 1000 feet"
-proc ceiling {param} {
+proc _ceiling {param} {
    playMsg "ca"
    playSilence 100
    speakNumber $param "unit_feet"
@@ -186,14 +197,14 @@ proc ceiling {param} {
 }
 
 # QNH
-proc qnh {value} {
+proc _qnh {value} {
   playMsg "qnh"
   speakNumber $value "unit_hPa"
   playSilence 200
 }
 
 # altimeter
-proc altimeter {value} {
+proc _altimeter {value} {
   playMsg "altimeter"
   playSilence 100
   speakNumber $value "unit_inch"
@@ -201,7 +212,7 @@ proc altimeter {value} {
 }
 
 # clouds with arguments
-proc clouds {obs height {cbs ""}} {
+proc _clouds {obs height {cbs ""}} {
   playMsg $obs
   playSilence 100
   speakNumber $height "unit_feet"
@@ -212,7 +223,7 @@ proc clouds {obs height {cbs ""}} {
 }
 
 # max day temperature
-proc max_daytemp {deg time} {
+proc _max_daytemp {deg time} {
   playMsg "predicted"
   playSilence 50
   playMsg "maximal"
@@ -230,7 +241,7 @@ proc max_daytemp {deg time} {
 }
 
 # min day temperature
-proc min_daytemp {deg time} {
+proc _min_daytemp {deg time} {
   playMsg "predicted"
   playSilence 50
   playMsg "minimal"
@@ -248,7 +259,7 @@ proc min_daytemp {deg time} {
 }
 
 # Maximum temperature in RMK section
-proc rmk_maxtemp {val} {
+proc _rmk_maxtemp {val} {
   playMsg "maximal"
   playMsg "temperature"
   playMsg "last"
@@ -259,7 +270,7 @@ proc rmk_maxtemp {val} {
 }
 
 # Minimum temperature in RMK section
-proc rmk_mintemp {val} {
+proc _rmk_mintemp {val} {
   playMsg "minimal"
   playMsg "temperature"
   playMsg "last"
@@ -270,7 +281,7 @@ proc rmk_mintemp {val} {
 }
 
 # RMK section pressure trend next 3 h
-proc rmk_pressure {val args} {
+proc _rmk_pressure {val args} {
   playMsg "pressure"
   playMsg "tendency"
   playMsg "next"
@@ -290,7 +301,7 @@ proc rmk_pressure {val args} {
 }
 
 # precipitation last hours in RMK section
-proc rmk_precipitation {hour val} {
+proc _rmk_precipitation {hour val} {
   playMsg "precipitation"
   playMsg "last"
   speakNumber $hour "hour"
@@ -300,7 +311,7 @@ proc rmk_precipitation {hour val} {
 }
 
 # precipitations in RMK section
-proc rmk_precip {args} {
+proc _rmk_precip {args} {
   foreach item $args {
      if [regexp {(\d+)} $item] {
        playNumber $item
@@ -313,7 +324,7 @@ proc rmk_precip {args} {
 }
 
 # daytime minimal/maximal temperature
-proc rmk_minmaxtemp {max min} {
+proc _rmk_minmaxtemp {max min} {
   playMsg "daytime"
   playMsg "temperature"
   playMsg "maximum"
@@ -324,7 +335,7 @@ proc rmk_minmaxtemp {max min} {
 }
 
 # recent temperature and dewpoint in RMK section
-proc rmk_tempdew {temp dewpt} {
+proc _rmk_tempdew {temp dewpt} {
   playMsg "re"
   playMsg "temperature"
   speakNumber $temp "unit_degree"
@@ -335,7 +346,7 @@ proc rmk_tempdew {temp dewpt} {
 }
 
 # QFE value
-proc qfe {val} {
+proc _qfe {val} {
   playMsg "qfe"
   speakNumber $val "unit_hPa"
   playSilence 200

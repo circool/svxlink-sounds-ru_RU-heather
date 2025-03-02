@@ -1,3 +1,8 @@
+# @author vladimir@tsurkanenko.ru
+# aka circool
+# aka R2ADU
+
+
 # Исправление для модуля EchoLink
 # by R2ADU
 #
@@ -18,8 +23,7 @@
 #
 namespace eval EchoLink {
 
-# Для эхолинка
-# Произносит число и добавляет (1 подключенная станция = "", 2...4 подключенные станции - ""+1, 5... подключенных станций = ""+s)
+# Произносит полученное число и добавляет (1 подключенная станция = "", 2...4 подключенные станции - ""+1, 5... подключенных станций = ""+s)
 proc playQuantityConnectedStations {qty} {
   if {$qty == 0} {
     playMsg "0"
@@ -36,13 +40,13 @@ proc playQuantityConnectedStations {qty} {
   }
 }	
 
+# Отчет о состоянии
 proc status_report {} {
   variable num_connected_stations;
   variable module_name;
   global active_module;
  
   if {$active_module == $module_name} {
-    #speakNumber "EchoLink" $num_connected_stations "connected_station"
     playQuantityConnectedStations $num_connected_stations
     playSilence 200
   }
@@ -52,9 +56,10 @@ proc status_report {} {
 # Executed when a request to list all connected stations is received.
 # That is, someone press DTMF "1#" when the EchoLink module is active.
 #
+# 
+# Сообщает количество подключенных станций и перечисляет их позывные
 proc list_connected_stations {connected_stations} {
-  #speakNumber "EchoLink" [llength $connected_stations] "connected_station";
-  playQuantityConnectedStations $num_connected_stations
+  playQuantityConnectedStations $connected_stations
   
   if {[llength $connected_stations] != 0} {
     playSilence 50;

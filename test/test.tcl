@@ -1,21 +1,24 @@
-# @author vladimir@tsurkanenko.ru
-# aka circool
-# aka R2ADU
+#!/usr/bin/env tclsh
+# Создаем пространство имен Logic
+namespace eval Logic {
+    variable CFG_TIME_FORMAT
+}
 
+# Мок-функция для playMsg, которая выводит сообщения в консоль
+proc playMsg {module message} {
+    puts "$module: $message"
+}
 
-###############################################################################
-# Руский синтаксис для воспроизведения времени
-# Процедура для формирования строки времени (без текстовых представлений)
+# Процедура playTime из вашего файла
 proc playTime {hour minute} {
-
     variable Logic::CFG_TIME_FORMAT
     # Проверка корректности формата времени
-    if {$CFG_TIME_FORMAT != 12 && $CFG_TIME_FORMAT != 24} {
+    if {$Logic::CFG_TIME_FORMAT != 12 && $Logic::CFG_TIME_FORMAT != 24} {
         error "Ошибка: CFG_TIME_FORMAT должен быть 12 или 24"
     }
 
     # Корректировка часа для 12-часового формата
-    if {$CFG_TIME_FORMAT == 12} {
+    if {$Logic::CFG_TIME_FORMAT == 12} {
         if {$hour == 0} {
             set hour 12
             set ampm "AM"
@@ -90,27 +93,42 @@ proc playTime {hour minute} {
     }
 
     # Добавление am/pm для 12-часового формата
-    if {$CFG_TIME_FORMAT == 12} {
+    if {$Logic::CFG_TIME_FORMAT == 12} {
         playMsg "Core" "$ampm"
     }
 }
 
-# proc playFrequency {}{
+# Тестовая процедура
+proc testPlayTime {hour minute} {
+    # Устанавливаем формат времени (12 или 24)
+    set Logic::CFG_TIME_FORMAT 12  ;# или 24, в зависимости от теста
 
-# }
+    # Вызываем playTime с переданными параметрами
+    playTime $hour $minute
+}
 
+# Основной код скрипта
+if {[llength $argv] != 2} {
+    puts "Использование: ./test.tcl <часы> <минуты>"
+    exit 1
+}
 
+# Извлекаем часы и минуты из аргументов командной строки
+set hour [lindex $argv 0]
+set minute [lindex $argv 1]
 
-# Произносит число и единицу измерения
-#   - температура в градусах по Цельсию ("unit_degree") - градус, градуса, градусов
-#   - давление в ГектоПаскалях ("unit_hPa") гектопаскаль, гектопаскаля, гектопаскалей
-#   - скорость ветра в узлах ("unit_kt") - узел, узла, узлов
-#   - период в часах ("hour") - час, часа, часов
-#   - ("unit_mb") - 
-#   - величина в дюймах ("unit_inch") - дюйм, дюйма, дюймов
-# proc speakNumber {value unit}{
+# Проверяем, что часы и минуты являются числами
+if {![string is integer $hour] || ![string is integer $minute]} {
+    puts "Ошибка: часы и минуты должны быть целыми числами"
+    exit 1
+}
 
-# }
+# Проверяем корректность значений часов и минут
+if {$hour < 0 || $hour > 23 || $minute < 0 || $minute > 59} {
+    puts "Ошибка: недопустимое значение времени. Часы должны быть от 0 до 23, минуты от 0 до 59"
+    exit 1
+}
 
-
-
+# Вызываем тестовую процедуру с переданными значениями
+puts "Тест: $hour:$minute"
+testPlayTime $hour $minute
