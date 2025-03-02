@@ -74,22 +74,35 @@ namespace eval Logic {
 	}
 }
 
-proc playFrequencyRuss {fq} {
-  if {$fq < 1000} {
-    set unit "Hz"
-  } elseif {$fq < 1000000} {
-    set fq [expr {$fq / 1000.0}]
-    set unit "kHz"
-  } elseif {$fq < 1000000000} {
-    set fq [expr {$fq / 1000000.0}]
-    set unit "MHz"
-  } else {
-    set fq [expr {$fq / 1000000000.0}]
-    set unit "GHz"
-  }
-  playNumberRuss [string trimright [format "%.3f" $fq] ".0" ] "male"
-  playMsg "Core" $unit
-}
+	proc playFrequencyRuss {fq} {
+	if {$fq < 1000} {
+		set unit "Hz"
+	} elseif {$fq < 1000000} {
+		set fq [expr {$fq / 1000.0}]
+		set unit "kHz"
+	} elseif {$fq < 1000000000} {
+		set fq [expr {$fq / 1000000.0}]
+		set unit "MHz"
+	} else {
+		set fq [expr {$fq / 1000000000.0}]
+		set unit "GHz"
+	}
+
+	# Форматируем число с тремя знаками после запятой
+	set formattedFq [format "%.3f" $fq]
+
+	# Убираем лишние нули и точку
+	set trimmedFq [string trimright $formattedFq ".0"]
+
+	# Проверяем, есть ли десятичная дробь в trimmedFq
+	if {[string first "." $trimmedFq] != -1} {
+		append unit "1"
+	}
+
+	# Произносим число и единицу измерения
+	playNumberRuss $trimmedFq "female"
+	playMsg "Core" $unit
+	}
 
 
 }

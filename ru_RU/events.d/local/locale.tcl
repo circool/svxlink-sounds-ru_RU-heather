@@ -6,9 +6,13 @@
 ###############################################################################
 # Руский синтаксис для воспроизведения времени
 # Процедура для формирования строки времени (без текстовых представлений)
-proc playTime {hour minute} {
+# TODO: 
+# ошибки при формировании минут (одна (1f) минута (minute), две (2f) минуты (minute1), три-четыре (3-4) минуты (minute1), далее пять-девятнадцать (5-19) минут(minuts))
+# для значений 20-59 повторяется - 21 минута, 25 минут, 41 минута, 59 минут
 
+proc playTime {hour minute} {
     variable Logic::CFG_TIME_FORMAT
+
     # Проверка корректности формата времени
     if {$CFG_TIME_FORMAT != 12 && $CFG_TIME_FORMAT != 24} {
         error "Ошибка: CFG_TIME_FORMAT должен быть 12 или 24"
@@ -29,33 +33,22 @@ proc playTime {hour minute} {
         }
     }
 
+    # Убираем ведущий ноль для часов
+    set hour [expr {$hour + 0}]
+
     # Обработка часов
     if {$hour == 0} {
         playMsg "Default" "0"
         playMsg "Default" "hours"
-    } elseif {$hour == 1} {
-        playMsg "Default" "1"
-        playMsg "Default" "hour"
-    } elseif {$hour >= 2 && $hour <= 4} {
+    } elseif {$hour == 1 || $hour == 21} {
         playMsg "Default" $hour
-        playMsg "Default" "hour1"
+        playMsg "Default" "hour"  ;# 1 час, 21 час
+    } elseif {($hour >= 2 && $hour <= 4) || ($hour >= 22 && $hour <= 24)} {
+        playMsg "Default" $hour
+        playMsg "Default" "hour1"  ;# 2-4 часа, 22-24 часа
     } elseif {$hour >= 5 && $hour <= 20} {
         playMsg "Default" $hour
-        playMsg "Default" "hours"
-    } elseif {$hour >= 21 && $hour <= 24} {
-        set hourTens [expr {$hour / 10}]
-        set hourUnits [expr {$hour % 10}]
-        if {$hourTens > 0} {
-            playMsg "Default" "${hourTens}0"
-        }
-        if {$hourUnits > 0} {
-            playMsg "Default" $hourUnits
-        }
-        if {$hour == 21} {
-            playMsg "Default" "hour"
-        } else {
-            playMsg "Default" "hour1"
-        }
+        playMsg "Default" "hours"  ;# 5-20 часов
     } else {
         playMsg "Default" $hour
         playMsg "Default" "hours"
@@ -65,27 +58,38 @@ proc playTime {hour minute} {
     if {$minute == 0} {
         playMsg "Default" "equal"
     } else {
-        set minuteTens [expr {$minute / 10}]
-        set minuteUnits [expr {$minute % 10}]
-        if {$minute >= 10 && $minute <= 19} {
-            # минут
+        # Убираем ведущий ноль для минут
+        set minute [expr {$minute + 0}]
+
+        if {$minute < 20} {
+            # Для чисел от 0 до 19 используем одностроковое значение
+            playMsg "Default" $minute
+        } elseif {$minute % 10 == 0} {
+            # Если минуты кратны 10, используем одностроковое значение
             playMsg "Default" $minute
         } else {
+            set minuteTens [expr {$minute / 10}]
+            set minuteUnits [expr {$minute % 10}]
             if {$minuteTens > 0} {
-                # десятки
-                playMsg "Default" "${minuteTens}0"
+                playMsg "Default" "${minuteTens}X"
             }
             if {$minuteUnits > 0} {
-                playMsg "Default" "$minuteUnits"
+                # Для минут 1, 2, 21, 22, 31, 32 и т.д. добавляем "f"
+                if {$minuteUnits == 1 || $minuteUnits == 2} {
+                    playMsg "Default" "${minuteUnits}f"
+                } else {
+                    playMsg "Default" "$minuteUnits"
+                }
             }
         }
 
+        # Склонение слова "минута" в зависимости от значения минут
         if {$minute % 10 == 1 && $minute != 11} {
-            playMsg "Default" "minute"
+            playMsg "Default" "minute"  ;# 1 минута, 21 минута, 31 минута и т.д.
         } elseif {($minute % 10 >= 2 && $minute % 10 <= 4) && ($minute < 10 || $minute > 20)} {
-            playMsg "Default" "minute1"
+            playMsg "Default" "minute1"  ;# 2-4 минуты, 22-24 минуты и т.д.
         } else {
-            playMsg "Default" "minutes"
+            playMsg "Default" "minutes"  ;# 5-19, 20, 25-29, ..., 59 минут
         }
     }
 
@@ -94,7 +98,6 @@ proc playTime {hour minute} {
         playMsg "Core" "$ampm"
     }
 }
-
 
 # Руский синтаксис для воспроизведения чисел
 # Параметры:
@@ -330,23 +333,6 @@ proc playFraction {fraction gender} {
     }
 }
 
-# Произносит частоту
-proc playFrequencyRuss {fq} {
-  if {$fq < 1000} {
-    set unit "Hz"
-  } elseif {$fq < 1000000} {
-    set fq [expr {$fq / 1000.0}]
-    set unit "kHz"
-  } elseif {$fq < 1000000000} {
-    set fq [expr {$fq / 1000000.0}]
-    set unit "MHz"
-  } else {
-    set fq [expr {$fq / 1000000000.0}]
-    set unit "GHz"
-  }
-  playNumberRuss [string trimright [format "%.3f" $fq] ".0" "female"]
-  playMsg "Core" $unit
-}
 
 
 
