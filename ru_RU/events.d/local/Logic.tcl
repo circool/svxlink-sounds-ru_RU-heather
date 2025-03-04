@@ -4,23 +4,23 @@
 
 namespace eval Logic {
 	
-	# Начальный запуск программы
-	proc startup {} {
+  # Начальный запуск программы
+  proc startup {} {
 		# Подготовить переменные для ананса текущего времени
 		set current_time [clock seconds]
     	set hour [clock format $current_time -format "%H"]
     	set minute [clock format $current_time -format "%M"]
   		# Сообщить что программа запущена, передать короткий анонс и сообщить текущее время
-		playMsg "Core" "online"
-  		send_short_ident
-		playSilence 250;
-  		playMsg "Core" "the_time_is";
-		playTime $hour $minute;
-		playSilence 500;
-	}
+		# playMsg "Core" "online"
+  		# send_short_ident
+		# playSilence 250;
+  		# playMsg "Core" "the_time_is";
+		# playTime $hour $minute;
+		# playSilence 500;
+  }
     
-	# Ручная идентификация
-	proc manual_identification {} {
+  # Ручная идентификация
+  proc manual_identification {} {
 	global mycall;
 	global report_ctcss;
 	global active_module;
@@ -39,18 +39,22 @@ namespace eval Logic {
 		playMsg "Core" "repeater";
 	}
 	playSilence 250;
+	
 	playMsg "Core" "the_time_is";
 	playTime $hour $minute;
 	playSilence 250;
+	
 	if {$report_ctcss > 0} {
 		playMsg "Core" "pl_is";
-		playFrequencyRuss $report_ctcss
+		playFrequencyRu $report_ctcss
 		playSilence 300;
 	}
+	
 	if {$active_module != ""} {
 		playMsg "Core" "active_module";
 		playMsg $active_module "name";
 		playSilence 250;
+		
 		set func "::";
 		append func $active_module "::status_report";
 		if {"[info procs $func]" ne ""} {
@@ -72,9 +76,9 @@ namespace eval Logic {
 			playSilence 250;
 		}
 	}
-}
+  }
 
-	proc playFrequencyRuss {fq} {
+  proc playFrequencyRu {fq} {
 	if {$fq < 1000} {
 		set unit "Hz"
 	} elseif {$fq < 1000000} {
@@ -95,14 +99,14 @@ namespace eval Logic {
 	set trimmedFq [string trimright $formattedFq ".0"]
 
 	# Проверяем, есть ли десятичная дробь в trimmedFq
-	if {[string first "." $trimmedFq] != -1} {
-		append unit "1"
-	}
+	# if {[string first "." $trimmedFq] != -1} {
+	# 	append unit "1"
+	# }
 
-	# Произносим число и единицу измерения
-	playNumberRuss $trimmedFq "female"
-	playMsg "Core" $unit
-	}
+	# Произносим число и единицу измерения 
+	playNumberRu $trimmedFq "female"
+	playUnit $trimmedFq $unit
+  }
 
 
 }

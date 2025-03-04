@@ -4,182 +4,298 @@
 
 namespace eval MetarInfo {
 
-# Произносит число и единицу измерения
-#   - температура в градусах по Цельсию ("unit_degree") - градус, градуса, градусов
-#   - давление в ГектоПаскалях ("unit_hPa") гектопаскаль, гектопаскаля, гектопаскалей
-#   - скорость ветра в узлах ("unit_kt") - узел, узла, узлов
-#   - период в часах ("hour") - час, часа, часов
-#   - ("unit_mb") - 
-#   - величина в дюймах ("unit_inch") - дюйм, дюйма, дюймов
-proc _speakNumber {msg unit} {
-  variable module_name;
-  ::speakNumber $module_name $msg $unit;
+
+# Воспроизведение единицы измерения в соответствии с правилами русского языка
+# Используется здесь потому-что многие единицы используюстя только MetarInfo и находятся
+# в соответствующем каталоге
+proc playUnit {value unit} {
+    # Проверяем, есть ли дробная часть (для дробный частей используем форму от слова "целая/целых")
+    if {[regexp {\.} $value]} {
+        set unit "${unit}1"
+    } else {
+        # Получаем последнюю цифру числа
+        set lastDigit [string index $value end]
+        
+        # Определяем правильную форму единицы измерения
+        if {$lastDigit == 1} {
+            # градус, минута
+            set unit "${unit}"
+        } elseif {$lastDigit == 2 || $lastDigit == 3 || $lastDigit == 4} {
+            # градуса, минуты
+            set unit "${unit}1"
+        } else {
+            # градусов, минут
+            set unit "${unit}s"
+        }
+    }
+    
+    playMsg $unit
 }
+
+# *Для улучшения восприятия для ходовых фраз подготовлены фразы вместо коипоновки отдельных слов
+
+# status_report
+
+
+# METAR as raw txt to make them available in a file
+
 
 # no airport defined
 proc _no_airport_defined {} {
    playMsg "no_airport_defined";
    playSilence 200;
 }
-# no airport defined
+
+
+# no such airport
 proc _no_such_airport {} {
    playMsg "no_such_airport";
    playSilence 200;
 }
+
+
 # METAR not valid
 proc _metar_not_valid {} {
   playMsg "metar_not_valid";
    playSilence 200;
 }
-# airport is closed due to snow
-proc _snowclosed {} {
-   playMag "aiport_closed_due_to_sn";
-   playSilence 200;
-}
-# RWY is clear
-proc _all_rwy_clear {} {
-  playMsg "all_runways_clr";
-  playSilence 200;
-}
 
-# MET-report TIME
-proc _metreport_time item {
+
+# MET-report TIME / Время отчета
+proc metreport_time item {
    playMsg "metreport_time"
-   set hr [string range $item 0 1]
-   set mn [string range $item 2 3]
-   playTime $hr $mn
+   scan [string range $item 0 1] %d hr
+   scan [string range $item 2 3] %d mn
+   playTime $hr $mn   
    playSilence 200
 }
 
 
+# visibility / Видимость 5 километров 900 метров !!! тут разобраться, 
+# значения состоят из нескольких аргументов, цифровые и буквенные
+# например 5 units_kms 500 units_ms
+proc visibility args {
+  playMsg "visibility";
+  puts "visibility arg:"
+  foreach item $args {
+    if [regexp {(\d+)} $item] {
+         playNumberRu $item "male";
+    } else {
+      playMsg $item;
+    }   
+    playSilence 100;
+  }
+  playSilence 200;
+}
+
+
 # temperature
-proc _temperature {temp} {
+proc temperature {temp} {
   playMsg "temperature"
   playSilence 100
   if {$temp == "not"} {
     playMsg "not"
     playMsg "reported"
   } else {
-    speakNumber $temp "unit_degree"
+    if { int($temp) < 0} {
+       playMsg "minus";
+       set temp [string trimleft $temp "-"];
+    }   
+    playNumberRu $temp "male"
+    playUnit $temp "unit_degree"
+    playSilence 100;
   }
   playSilence 200
 }
 
-# dewpoint
-proc _dewpoint {dewpt} {
+# dewpoint / Точка росы
+proc dewpoint {dewpt} {
   playMsg "dewpoint"
   playSilence 100
   if {$dewpt == "not"} {
     playMsg "not"
     playMsg "reported"
-  } else {
-    speakNumber $dewpt "unit_degree"
-    playSilence 100
+  } else {   
+    playNumberRu $dewpt "male"
+    playUnit $dewpt "unit_degree"
+    playSilence 100;    
   }
   playSilence 200
 }
 
-# sea level pressure
-proc _slp {slp} {
+# sea level pressure // нет примера
+proc slp {slp} {
   playMsg "slp"
-  speakNumber $slp "unit_hPa"
+  puts "sea level pressure:" 
+  
+  playNumberRu $slp "male"
+  puts $slp
+
+  playUnit $slp "unit_hPa"
+  puts "unit_hPa"
+  
   playSilence 200
 }
 
 # flightlevel
-proc _flightlevel {level} {
+proc flightlevel {level} {
   playMsg "flightlevel"
-  speakNumber $level ""
+  puts "flightlevel:"
+  playNumberRu $level "male"
+  puts $level
   playSilence 200
 }
 
+
+# No specific reports taken
+
+
+
+
+
+
+
+
+
+# airport is closed due to snow / Аэропорт закрыт из-за снега
+proc snowclosed {} {
+   playMag "aiport_closed_due_to_sn";
+   playSilence 200;
+}
+
+# RWY is clear / Все ВВП чисты (звучит ужастно)
+proc all_rwy_clear {} {
+  playMsg "all_runways_clr";
+  playSilence 200;
+}
+
+
+# peakwind
+proc peakwind {val} {
+  playMsg "pk_wnd";
+  playSilence 100;
+  playNumberRu $val "male";
+  playSilence 200;
+}
+
+
 # wind
-proc _wind {deg {vel 0 } {unit 0} {gusts 0} {gvel 0}} {
+proc wind {deg {vel 0 } {unit 0} {gusts 0} {gvel 0}} {
   playMsg "wind"
   if {$deg == "calm"} {
     playMsg "calm"
   } elseif {$deg == "variable"} {
     playMsg "variable"
     playSilence 200
-    speakNumber $vel $unit
+    playNumberRu $vel "male"
+    playUnit $vel $unit
+
+
   } else {
     # ветер ... м/сек на ... градусов
-    speakNumber $vel $unit
+    playNumberRu $vel "male"
+    playUnit $vel $unit
+    # speakNumber $vel $unit
     playSilence 100
     playMsg "at"
     playSilence 100
-    speakNumber $deg "unit_degree"
+    playNumberRu $deg "male"
+    playUnit $deg "unit_degree"
+    
+    #speakNumber $deg "unit_degree"
     playSilence 100
     if {$gusts > 0} {
       playMsg "gusts_up"
-      speakNumber $gusts $gvel
+      playNumberRu $gusts "male"
+      playUnit $gusts $gvel
+      #speakNumber $gusts $gvel
     }
   }
   playSilence 200
 }
 
 # weather actually
-proc _actualWX args {
-  foreach item $args {
-    if [regexp {(\d+)} $item] {
-      playNumber $item
-    } else {
-      playMsg $item
-    }
-  }
-  playSilence 200
-}
+# proc _actualWX args {
+#   foreach item $args {
+#     if [regexp {(\d+)} $item] {
+#       playNumber $item
+#     } else {
+#       playMsg $item
+#     }
+#   }
+#   playSilence 200
+# }
 
 # wind varies $from $to
-proc _windvaries {from to} {
+proc windvaries {from to} {
    playMsg "wind"
    playSilence 50
    playMsg "varies_from"
    playSilence 100
-   playNumber $from
+   playNumberRu $from "male"
+  #  playNumber $from
    playSilence 100
    playMsg "to"
    playSilence 100
-   speakNumber $to "unit_degree"
+   playNumberRu $to "male"
+   playUnit $to "unit_degree"
+  #  speakNumber $to "unit_degree"
    playSilence 200
 }
 
 # Peak WIND
-proc _peakwind {deg kts hh mm} {
+proc peakwind {deg kts hh mm} {
    playMsg "pk_wnd"
    playMsg "from"
    playSilence 100
-   speakNumber $deg "unit_degree"
+   playNumberRu $deg "male"
+   playUnit $deg "unit_kt"
+  #  speakNumber $deg "unit_degree"
    playSilence 100
-   speakNumber $kts "unit_kt"
+   
+   playNumberRu $kts "male"
+   playUnit $kts "unit_kt"
+  #  speakNumber $kts "unit_kt"
    playSilence 100
+   
    playMsg "at"
-   if {$hh != "XX"} {
-      speakNumber $hh "hour"
-   }
-   speakNumber $mm "minute"
+  #  if {$hh != "XX"} {
+  #     speakNumber $hh "hour"
+  #  }
+  #  speakNumber $mm "minute"
+   playTime $hh $mm
+
    playMsg "utc"
    playSilence 200
 }
 
 # ceiling varies $from $to
-proc _ceilingvaries {from to} {
-   playMsg "ca"
-   playSilence 50
-   playMsg "varies_from"
-   playSilence 100
-   set from [expr {int($from) * 100}]
-   playNumber $from
-   playSilence 100
-   playMsg "to"
-   playSilence 100
-   set to [expr {int($to)*100}]
-   speakNumber $to "unit_feet"
-   playSilence 200
-}
+# proc _ceilingvaries {from to} {
+#    playMsg "ca"
+#    playSilence 50
+#    playMsg "varies_from"
+#    playSilence 100
+#    set from [expr {int($from) * 100}]
+#    playNumber $from
+#    playSilence 100
+#    playMsg "to"
+#    playSilence 100
+#    set to [expr {int($to)*100}]
+#    speakNumber $to "unit_feet"
+#    playSilence 200
+# }
+
+
+# runway visual range
+
+# airport is closed due to snow
+
+# RWY is clear
+
+# Runway designator
 
 # time
-proc _utime {utime} {
+proc utime {utime} {
    set hr [string range $utime 0 1]
    set mn [string range $utime 2 3]
    playTime $hr $mn
@@ -189,41 +305,50 @@ proc _utime {utime} {
 }
 
 # vv100 -> "vertical view (ceiling) 1000 feet"
-proc _ceiling {param} {
+proc ceiling {param} {
    playMsg "ca"
    playSilence 100
-   speakNumber $param "unit_feet"
+   playNumberRu $param "male"
+   playUnit $param "unit_feet"
    playSilence 200
 }
 
 # QNH
-proc _qnh {value} {
+proc qnh {value} {
   playMsg "qnh"
-  speakNumber $value "unit_hPa"
+  playNumberRu $value "male"
+  playUnit $value "unit_hPa"
   playSilence 200
 }
 
 # altimeter
-proc _altimeter {value} {
+proc altimeter {value} {
   playMsg "altimeter"
   playSilence 100
-  speakNumber $value "unit_inch"
+  playNumberRu $value "male"
+  playUnit $value "unit_inch"
   playSilence 200
 }
 
+# trend
+
 # clouds with arguments
-proc _clouds {obs height {cbs ""}} {
+proc clouds {obs height {cbs ""}} {
   playMsg $obs
   playSilence 100
-  speakNumber $height "unit_feet"
+  playNumberRu $height "male"
+  playUnit $height "unit_feet"
   if {[string length $cbs] > 0} {
     playMsg $cbs
   }
   playSilence 200
 }
 
+# temporary weather obscuration
+
+
 # max day temperature
-proc _max_daytemp {deg time} {
+proc max_daytemp {deg time} {
   playMsg "predicted"
   playSilence 50
   playMsg "maximal"
@@ -241,7 +366,7 @@ proc _max_daytemp {deg time} {
 }
 
 # min day temperature
-proc _min_daytemp {deg time} {
+proc min_daytemp {deg time} {
   playMsg "predicted"
   playSilence 50
   playMsg "minimal"
@@ -259,40 +384,59 @@ proc _min_daytemp {deg time} {
 }
 
 # Maximum temperature in RMK section
-proc _rmk_maxtemp {val} {
+proc rmk_maxtemp {val} {
   playMsg "maximal"
   playMsg "temperature"
   playMsg "last"
-  speakNumber 6 "hour"
+  playNumberRu 6 "male"
+  playUnit 6 "hour"
+
   playSilence 50
-  speakNumber $val "unit_degree"
+  playNumberRu $val "male"
+  playUnit $val "unit_degree"
   playSilence 200
 }
 
 # Minimum temperature in RMK section
-proc _rmk_mintemp {val} {
+proc rmk_mintemp {val} {
   playMsg "minimal"
   playMsg "temperature"
   playMsg "last"
-  speakNumber 6 "hour"
+  playNumberRu 6 "male"
+  playUnit 6 "hour"
   playSilence 50
-  speakNumber $val "unit_degree"
+  playNumberRu $val "male"
+  playUnit $val "unit_degree"
   playSilence 200
 }
 
+# the begin of RMK section
+
+
+
+
+
 # RMK section pressure trend next 3 h
-proc _rmk_pressure {val args} {
+proc rmk_pressure {val args} {
   playMsg "pressure"
   playMsg "tendency"
   playMsg "next"
-  speakNumber 3 "hour"
+  playNumberRu 3 "male"
+  playUnit 3 "hour"
   playSilence 50
-  speakNumber $val "unit_mb"
+
+  playNumberRu $val "male"
+  playUnit $val "unit_mb"
   playSilence 200
+  
+  puts "rmk_pressure:"
   foreach item $args {
      if [regexp {(\d+)} $item] {
+       puts $item
        playNumber $item
+       
      } else {
+       puts $item
        playMsg $item
      }
      playSilence 100
@@ -301,22 +445,29 @@ proc _rmk_pressure {val args} {
 }
 
 # precipitation last hours in RMK section
-proc _rmk_precipitation {hour val} {
+proc rmk_precipitation {hour val} {
   playMsg "precipitation"
   playMsg "last"
-  speakNumber $hour "hour"
+  playNumberRu $hour "male"
+  playUnit $hour "hour"
+  
   playSilence 50
-  speakNumber $val "unit_inch"
+  playNumberRu $val "male"
+  playUnit $val "unit_inch"
+  # speakNumber $val "unit_inch"
   playSilence 200
 }
 
 # precipitations in RMK section
-proc _rmk_precip {args} {
+proc rmk_precip {args} {
+  puts "rmk_precip:"
   foreach item $args {
      if [regexp {(\d+)} $item] {
        playNumber $item
+       puts $item
      } else {
        playMsg $item
+       puts $item
      }
      playSilence 100
   }
@@ -328,9 +479,22 @@ proc _rmk_minmaxtemp {max min} {
   playMsg "daytime"
   playMsg "temperature"
   playMsg "maximum"
-  speakNumber $min "unit_degree"
+  if { $max < 0} {
+     playMsg "minus";
+     set max [string trimleft $max "-"];
+  }
+  playNumberRu $min "male"
+  playUnit $min "unit_degree"
+  # speakNumber $min "unit_degree"
+  
   playMsg "minimum"
-  speakNumber $max "unit_degree"
+  if { $max < 0} {
+     playMsg "minus";
+     set max [string trimleft $max "-"];
+  }
+  playNumberRu $max "male"
+  playUnit $max "unit_degree"
+  # speakNumber $max "unit_degree"
   playSilence 200
 }
 
@@ -338,19 +502,36 @@ proc _rmk_minmaxtemp {max min} {
 proc _rmk_tempdew {temp dewpt} {
   playMsg "re"
   playMsg "temperature"
-  speakNumber $temp "unit_degree"
+  playNumberRu $temp "male"
+  playUnit $temp "unit_degree"
+  # speakNumber $temp "unit_degree"
   playSilence 200
   playMsg "dewpoint"
-  speakNumber $dewpt "unit_degree"
+  playNumberRu $dewpt "male"
+  playUnit $dewpt "unit_degree"
+  # speakNumber $dewpt "unit_degree"
   playSilence 200
 }
+
+# wind shift
 
 # QFE value
 proc _qfe {val} {
   playMsg "qfe"
-  speakNumber $val "unit_hPa"
+  playNumberRu $val "male"
+  playUnit $val "unit_hPa"
+  # speakNumber $val "unit_hPa"
   playSilence 200
 }
+
+
+# runwaystate
+
+# output numbers
+
+# output
+
+# part 1 of help #01
 
 # announce airport at the beginning of the MEATAR
 proc announce_airport {icao} {
@@ -365,4 +546,19 @@ proc announce_airport {icao} {
   }
 
 }
+
+# say preconfigured airports
+
+#  global lang;
+
+# say clouds with covering
+
+
+
+
+# end of namespace
 }
+
+#
+# This file has not been truncated
+#

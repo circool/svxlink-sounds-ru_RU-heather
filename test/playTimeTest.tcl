@@ -29,9 +29,10 @@ proc playMsg {category message} {
 }
 
 # Процедура playTime, которая обрабатывает время и вызывает playMsg
-proc playTime {hour minute} {
-    global CFG_TIME_FORMAT
 
+proc playTime {hour minute} {
+    # variable Logic::CFG_TIME_FORMAT
+    global CFG_TIME_FORMAT
     # Проверка корректности формата времени
     if {$CFG_TIME_FORMAT != 12 && $CFG_TIME_FORMAT != 24} {
         error "Ошибка: CFG_TIME_FORMAT должен быть 12 или 24"
@@ -60,10 +61,26 @@ proc playTime {hour minute} {
         playMsg "Default" "0"
         playMsg "Default" "hours"
     } elseif {$hour == 1 || $hour == 21} {
-        playMsg "Default" $hour
+        # Для 1 и 21 часа используем "hour"
+        if {$hour == 21} {
+            playMsg "Default" "2X"
+            playMsg "Default" "1"
+        } else {
+            playMsg "Default" $hour
+        }
         playMsg "Default" "hour"  ;# 1 час, 21 час
     } elseif {($hour >= 2 && $hour <= 4) || ($hour >= 22 && $hour <= 24)} {
-        playMsg "Default" $hour
+        # Для часов от 20 и выше, если число не кратно 10, разбиваем на десятки и единицы
+        if {$hour >= 20 && $hour % 10 != 0} {
+            set hourTens [expr {$hour / 10}]
+            set hourUnits [expr {$hour % 10}]
+            playMsg "Default" "${hourTens}X"
+            if {$hourUnits > 0} {
+                playMsg "Default" "$hourUnits"
+            }
+        } else {
+            playMsg "Default" $hour
+        }
         playMsg "Default" "hour1"  ;# 2-4 часа, 22-24 часа
     } elseif {$hour >= 5 && $hour <= 20} {
         playMsg "Default" $hour
@@ -117,7 +134,6 @@ proc playTime {hour minute} {
         playMsg "Core" "$ampm"
     }
 }
-
 # Процедура для получения параметров из командной строки и вызова playTime
 proc main {} {
     global argv
