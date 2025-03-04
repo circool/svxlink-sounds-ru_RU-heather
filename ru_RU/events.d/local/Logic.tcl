@@ -11,12 +11,12 @@ namespace eval Logic {
     	set hour [clock format $current_time -format "%H"]
     	set minute [clock format $current_time -format "%M"]
   		# Сообщить что программа запущена, передать короткий анонс и сообщить текущее время
-		# playMsg "Core" "online"
-  		# send_short_ident
-		# playSilence 250;
-  		# playMsg "Core" "the_time_is";
-		# playTime $hour $minute;
-		# playSilence 500;
+		playMsg "Core" "online"
+  		send_short_ident
+		playSilence 250;
+  		playMsg "Core" "the_time_is";
+		playTime $hour $minute;
+		playSilence 500;
   }
     
   # Ручная идентификация
