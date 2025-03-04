@@ -1,6 +1,6 @@
 #!/usr/bin/env tclsh
 
-proc playNumberRuss { value gender } {
+proc playNumberRu { value gender } {
     
     # Обработка отрицательных чисел
     set isNegative [expr {$value < 0}]
@@ -102,13 +102,13 @@ proc playMsg { param1 param2 } {
 	puts "DEBUG: playMsg playing audio $param2"	
 }
 
-# Процедура для получения параметров из командной строки и вызова playNumberRuss
+# Процедура для получения параметров из командной строки и вызова playNumberRu
 proc main {} {
     global argv
 
     # Проверяем, что передано два аргумента: час и минута
     if {[llength $argv] != 2} {
-        puts "Использование: playNumberRussTest.tcl <value> <gender>"
+        puts "Использование: playNumberRuTest.tcl <value> <gender>"
         exit 1
     }
 
@@ -117,7 +117,7 @@ proc main {} {
     set param2 [lindex $argv 1]
 
     # Вызываем процедуру playTime с полученными аргументами
-    playNumberRuss $param1 $param2
+    playNumberRu $param1 $param2
 }
 
 # Вызов основной процедуры
@@ -131,7 +131,7 @@ main
 # Воспроизведения чисел в соответствием с правилами произношения цифр в русском языке.
 # Поскольку после числа может произноситься и единица измерения (минута, метр итд), важно предусмотреть это при формировании произношения числа (для этого нужен $gender)
 
-# Далее в описании приведены русские слова для понимания. В теле процедуры используй такие эквиваленты:
+# Далее в описании приведены русские слова для понимания. 
 # тысяча - thousand
 # тысячи - thousands
 # тысяч - thousand1
@@ -169,15 +169,15 @@ main
 # Для чисел, которые нельзя выразить вышеперечисленными строками вызывается несколько команд playMsg {"Default" $stringValue}
 
 # Например
-# playNumberRuss { 415 "male|female|neuter"} => playMsg {"Default" "400"}; playMsg {"Default" "15"}
-# playNumberRuss { 731 "male|female|neuter"} => playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
-# playNumberRuss { 1731 "male|female|neuter"} => playMsg {"Default" "1f"};  playMsg {"Default" "thousand"}; playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
-# playNumberRuss { 2731 "male|female|neuter"} => playMsg {"Default" "2f"};  playMsg {"Default" "thousands"}; playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
-# playNumberRuss { 5731 "male|female|neuter"} => playMsg {"Default" "5"};  playMsg {"Default" "thousand1"}; playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
+# playNumberRu { 415 "male|female|neuter"} => playMsg {"Default" "400"}; playMsg {"Default" "15"}
+# playNumberRu { 731 "male|female|neuter"} => playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
+# playNumberRu { 1731 "male|female|neuter"} => playMsg {"Default" "1f"};  playMsg {"Default" "thousand"}; playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
+# playNumberRu { 2731 "male|female|neuter"} => playMsg {"Default" "2f"};  playMsg {"Default" "thousands"}; playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
+# playNumberRu { 5731 "male|female|neuter"} => playMsg {"Default" "5"};  playMsg {"Default" "thousand1"}; playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
 
 # Относится только к блоку тысяч и блоку единиц:
-# если gender=female и последняя цифра = 1 или 2, к ней добавляется "f" напр. playNumberRuss { 701 "female" } -> playMsg {"Default" "700"}; playMsg {"Default" "1f"};
-# если gender=neuter и последняя цифра = 1 или 2, к ней добавляется "o" напр. playNumberRuss { 701 "female" } -> playMsg {"Default" "700"}; playMsg {"Default" "1o"};
+# если gender=female и последняя цифра = 1 или 2, к ней добавляется "f" напр. playNumberRu { 701 "female" } -> playMsg {"Default" "700"}; playMsg {"Default" "1f"};
+# если gender=neuter и последняя цифра = 1 или 2, к ней добавляется "o" напр. playNumberRu { 701 "female" } -> playMsg {"Default" "700"}; playMsg {"Default" "1o"};
 
 
 # Для дробных числе действуют особые условия:
@@ -188,9 +188,9 @@ main
 # Если целая или дробная часть заказчивается на 1 или 2 для такой части используй правила для gender=female (относитcя как к единицам, так и к тысячам)
 # Обрати внимание
 # Для сотых и десятых долей используй "десятая" или "сотая" когда дробная часть заканчивается на 1, иначе используй "десятых" или "сотых" соответстренно
-# playNumberRuss { 2.01 "female" } -> playMsg {"Default" "2f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "hundredth"}
-# playNumberRuss { 91.1 "female" } -> playMsg {"Default" "90"}; playMsg {"Default" "1f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "tenths"}
-# playNumberRuss { 52.1 "female" } -> playMsg {"Default" "590"}; playMsg {"Default" "1f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "tenths"}
+# playNumberRu { 2.01 "female" } -> playMsg {"Default" "2f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "hundredth"}
+# playNumberRu { 91.1 "female" } -> playMsg {"Default" "90"}; playMsg {"Default" "1f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "tenths"}
+# playNumberRu { 52.1 "female" } -> playMsg {"Default" "590"}; playMsg {"Default" "1f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "tenths"}
 
 
 # Для чисел дробной части дополняей указанием разрядности (десятые доли - "tenth", сотые - "hundredth")
