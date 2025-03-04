@@ -13,6 +13,19 @@ proc playUnit {value unit} {
   ::playUnit $module_name $value $unit;
 }
 
+# Процедура определения рода для единицы измерения
+proc getGender { unit } {
+    # Проверяем единицы женского рода
+    if {$unit eq "unit_mile"} {
+        return "female"
+    } elseif {$unit eq "unit_mph"} {
+        return "female"
+    }
+    
+    # Все остальные случаи - мужской род
+    return "male"
+}
+
 # Для улучшения восприятия для ходовых фраз подготовлены фразы вместо коипоновки отдельных слов
 
 # status_report
@@ -42,8 +55,9 @@ proc _metar_not_valid {} {
 }
 
 
-# MET-report TIME / Время отчета
+# MET-report TIME / Время отчета (не проверено)
 proc metreport_time item {
+  puts "metreport_time: $item"
   playMsg "metreport_time"
   scan [string range $item 0 1] %d hr
   scan [string range $item 2 3] %d mn
@@ -52,11 +66,12 @@ proc metreport_time item {
 }
 
 
-# visibility / Видимость 5 километров 900 метров 
+# visibility / Видимость 5 километров 900 метров  (не проверено)
 # !!! тут разобраться, 
 # значения состоят из нескольких аргументов, цифровые и буквенные
 # например 5 units_kms 500 units_ms
 proc visibility args {
+  puts "visibility: $args"
   playMsg "visibility";
   foreach item $args {
     if [regexp {(\d+)} $item] {
@@ -70,8 +85,9 @@ proc visibility args {
 }
 
 
-# temperature
+# temperature (не проверено)
 proc temperature {temp} {
+  puts "temperature: $temp"
   playMsg "temperature"
   playSilence 100
   if {$temp == "not"} {
@@ -90,8 +106,9 @@ proc temperature {temp} {
 }
 
 
-# dewpoint / Точка росы
+# dewpoint / Точка росы (не проверено)
 proc dewpoint {dewpt} {
+  puts "dewpoint: $dewpt"
   playMsg "dewpoint"
   playSilence 100
   if {$dewpt == "not"} {
@@ -106,8 +123,9 @@ proc dewpoint {dewpt} {
 }
 
 
-# sea level pressure // нет примера
+# sea level pressure // (не проверено)
 proc slp {slp} {
+  puts "slp: $slp"
   playMsg "slp"
   puts "sea level pressure: $slp" 
   
@@ -120,12 +138,11 @@ proc slp {slp} {
   playSilence 200
 }
 
-# flightlevel
+# flightlevel (не проверено)
 proc flightlevel {level} {
-  playMsg "flightlevel"
-  puts "flightlevel:"
+  puts "flightlevel: $level"
+  playMsg "flightlevel" 
   playNumberRu $level "male"
-  # puts $level
   playSilence 200
 }
 
@@ -133,8 +150,9 @@ proc flightlevel {level} {
 # No specific reports taken
 
 
-# peakwind
+# peakwind (не проверено)
 proc peakwind {val} {
+  puts "peakwind: $val"
   playMsg "pk_wnd";
   playSilence 100;
   playNumberRu $val "male";
@@ -142,10 +160,9 @@ proc peakwind {val} {
 }
 
 
-
 # wind
 proc wind {deg {vel 0 } {unit 0} {gusts 0} {gvel 0}} {
-  # puts "Wind has: deg=$deg vel=$vel unit=$unit gusts=$gusts gvel=$gvel"
+  puts "wind: deg=$deg vel=$vel unit=$unit gusts=$gusts gvel=$gvel"
   set vel [scan $vel %d]
   set gusts [scan $gusts %d]
   
@@ -184,101 +201,91 @@ proc wind {deg {vel 0 } {unit 0} {gusts 0} {gvel 0}} {
 }
 
 
-# Процедура определения рода для единицы измерения
-proc getGender { unit } {
-    # Проверяем единицы женского рода
-    if {$unit eq "unit_mile"} {
-        return "female"
-    } elseif {$unit eq "unit_mph"} {
-        return "female"
-    }
-    
-    # Все остальные случаи - мужской род
-    return "male"
-}
-
-
-
-# weather actually
+# weather actually (не проверено)
 # Несколько пар значений
 proc actualWX args {
-    set i 0
-    while {$i < [llength $args]} {
-        set item [lindex $args $i]
-        # Проверяем является ли текущий элемент числовым значением
-        if {[regexp {\d+} $item]} {
-            # Обрабатываем как значение
-            set val $item
-            incr i
-            
-            # Проверяем наличие единицы измерения следом
-            if {$i < [llength $args]} {
-                set unit [lindex $args $i]
-                set gender [getGender $unit]
-                playNumberRu $val $gender
-                playUnit $val $unit
-                incr i
-            } else {
-                # Если единицы нет - используем male и не вызываем playUnit
-                playNumberRu $val "male"
-            }
-        } else {
-            # Обработка нечисловых значений как простых сообщений
-            playMsg $item
-            incr i
-        }
-    }
-    playSilence 200
+  puts "actualWX: $args"
+  set i 0
+  while {$i < [llength $args]} {
+      set item [lindex $args $i]
+      # Проверяем является ли текущий элемент числовым значением
+      if {[regexp {\d+} $item]} {
+          # Обрабатываем как значение
+          set val $item
+          incr i
+          
+          # Проверяем наличие единицы измерения следом
+          if {$i < [llength $args]} {
+              set unit [lindex $args $i]
+              set gender [getGender $unit]
+              playNumberRu $val $gender
+              playUnit $val $unit
+              incr i
+          } else {
+              # Если единицы нет - используем male и не вызываем playUnit
+              playNumberRu $val "male"
+          }
+      } else {
+          # Обработка нечисловых значений как простых сообщений
+          playMsg $item
+          incr i
+      }
+  }
+  playSilence 200
 }
 
 
-# wind varies $from $to
+# wind varies $from $to (не проверено)
 proc windvaries {from to} {
-   playMsg "wind"
-   playSilence 50
-   playMsg "varies_from"
-   playSilence 100
-   playNumberRu $from "male"
+  puts "windvaries: $from $to"
+  playMsg "wind"
+  playSilence 50
+  playMsg "varies_from"
+  playSilence 100
+  playNumberRu $from "male"
   #  playNumber $from
-   playSilence 100
-   playMsg "to"
-   playSilence 100
-   playNumberRu $to "male"
-   playUnit $to "unit_degree"
+  playSilence 100
+  playMsg "to"
+  playSilence 100
+  playNumberRu $to "male"
+  playUnit $to "unit_degree"
   #  speakNumber $to "unit_degree"
-   playSilence 200
+  playSilence 200
 }
 
 
-# Peak WIND
+# Peak WIND (не проверено)
+# Перегрузка
 proc peakwind {deg kts hh mm} {
-   playMsg "pk_wnd"
-   playMsg "from"
-   playSilence 100
-   playNumberRu $deg "male"
-   playUnit $deg "unit_kt"
+  puts "peakwind: $deg $kts $hh $mm"
+  playMsg "pk_wnd"
+  playMsg "from"
+  playSilence 100
+  playNumberRu $deg "male"
+  playUnit $deg "unit_kt"
   #  speakNumber $deg "unit_degree"
-   playSilence 100
+  playSilence 100
    
-   playNumberRu $kts "male"
-   playUnit $kts "unit_kt"
+  playNumberRu $kts "male"
+  playUnit $kts "unit_kt"
   #  speakNumber $kts "unit_kt"
-   playSilence 100
+  playSilence 100
    
-   playMsg "at"
+  playMsg "at"
   #  if {$hh != "XX"} {
   #     speakNumber $hh "hour"
   #  }
   #  speakNumber $mm "minute"
-   playTime $hh $mm
+  playTime $hh $mm
 
-   playMsg "utc"
-   playSilence 200
+  playMsg "utc"
+  playSilence 200
 }
 
 
-# ceiling varies $from $to
+# ceiling varies $from $to (не проверено)
 proc ceilingvaries {from to} {
+   puts "ceiling varies $from $to"
    playMsg "ca"
    playSilence 50
    playMsg "varies_from"
@@ -301,15 +308,16 @@ proc snowclosed {} {
    playSilence 200;
 }
 
-# RWY is clear / Все ВВП чисты (звучит ужастно)
+# RWY is clear / Все ВВП чисты (звучит ужасно)
 proc all_rwy_clear {} {
   playMsg "all_runways_clr";
   playSilence 200;
 }
 
 
-# runway visual range
+# runway visual range (не проверено)
 proc rvr args {
+    puts "rvr: $args"
     set i 0
     while {$i < [llength $args]} {
         set item [lindex $args $i]
@@ -346,8 +354,9 @@ proc rvr args {
 
 # Runway designator
 
-# time
+# time (не проверено)
 proc utime {utime} {
+  puts "utime: $utime"
    set hr [string range $utime 0 1]
    set mn [string range $utime 2 3]
    playTime $hr $mn
@@ -356,8 +365,9 @@ proc utime {utime} {
    playSilence 200
 }
 
-# vv100 -> "vertical view (ceiling) 1000 feet"
+# vv100 -> "vertical view (ceiling) 1000 feet" (не проверено)
 proc ceiling {param} {
+   puts "ceiling: $param"
    playMsg "ca"
    playSilence 100
    playNumberRu $param "male"
@@ -365,16 +375,18 @@ proc ceiling {param} {
    playSilence 200
 }
 
-# QNH
+# QNH (не проверено)
 proc qnh {value} {
+  puts "qnh: $value"
   playMsg "qnh"
   playNumberRu $value "male"
   playUnit $value "unit_hPa"
   playSilence 200
 }
 
-# altimeter
+# altimeter (не проверено)
 proc altimeter {value} {
+  puts "altimeter: $value"
   playMsg "altimeter"
   playSilence 100
   playNumberRu $value "male"
@@ -384,8 +396,9 @@ proc altimeter {value} {
 
 # trend
 
-# clouds with arguments
+# clouds with arguments (не проверено)
 proc clouds {obs height {cbs ""}} {
+  puts "clouds: $obs $height $cbs"
   playMsg $obs
   playSilence 100
   playNumberRu $height "male"
@@ -399,8 +412,9 @@ proc clouds {obs height {cbs ""}} {
 # temporary weather obscuration
 
 
-# max day temperature
+# max day temperature (не проверено)
 proc max_daytemp {deg time} {
+  puts "max_daytemp: $deg $time"
   playMsg "predicted"
   playSilence 50
   playMsg "maximal"
@@ -419,8 +433,9 @@ proc max_daytemp {deg time} {
   playSilence 200
 }
 
-# min day temperature
+# min day temperature (не проверено)
 proc min_daytemp {deg time} {
+  puts "min_daytemp: $deg $time"
   playMsg "predicted"
   playSilence 50
   playMsg "minimal"
@@ -439,8 +454,9 @@ proc min_daytemp {deg time} {
   playSilence 200
 }
 
-# Maximum temperature in RMK section
+# Maximum temperature in RMK section (не проверено)
 proc rmk_maxtemp {val} {
+  puts "rmk_maxtemp: $val"
   playMsg "maximal"
   playMsg "temperature"
   playMsg "last"
@@ -453,8 +469,9 @@ proc rmk_maxtemp {val} {
   playSilence 200
 }
 
-# Minimum temperature in RMK section
+# Minimum temperature in RMK section (не проверено)
 proc rmk_mintemp {val} {
+  puts "rmk_mintemp: $val"
   playMsg "minimal"
   playMsg "temperature"
   playMsg "last"
@@ -469,11 +486,9 @@ proc rmk_mintemp {val} {
 # the begin of RMK section
 
 
-
-
-
-# RMK section pressure trend next 3 h
+# RMK section pressure trend next 3 h (не проверено)
 proc rmk_pressure {val args} {
+  puts "rmk_pressure: val=$val args=$args"
   playMsg "pressure"
   playMsg "tendency"
   playMsg "next"
@@ -484,18 +499,7 @@ proc rmk_pressure {val args} {
   playNumberRu $val "male"
   playUnit $val "unit_mb"
   playSilence 200
-  puts "rmk_pressure: val=$val args=$args"
-  # foreach item $args {
-  #    if [regexp {(\d+)} $item] {
-  #      puts $item
-  #      playNumberRu $item "male"
-       
-  #    } else {
-  #      puts $item
-  #      playMsg $item
-  #    }
-  #    playSilence 100
-  # }
+  
   set i 0
     while {$i < [llength $args]} {
         set item [lindex $args $i]
@@ -525,8 +529,9 @@ proc rmk_pressure {val args} {
   playSilence 200
 }
 
-# precipitation last hours in RMK section
+# precipitation last hours in RMK section (не проверено)
 proc rmk_precipitation {hour val} {
+  puts "rmk_precipitation: $hour $val"
   playMsg "precipitation"
   playMsg "last"
   playNumberRu $hour "male"
@@ -539,19 +544,9 @@ proc rmk_precipitation {hour val} {
   playSilence 200
 }
 
-# precipitations in RMK section
+# precipitations in RMK section (не проверено)
 proc rmk_precip {args} {
   puts "rmk_precip: $args"
-  # foreach item $args {
-  #    if [regexp {(\d+)} $item] {
-  #      playNumber $item
-  #      puts $item
-  #    } else {
-  #      playMsg $item
-  #      puts $item
-  #    }
-  #    playSilence 100
-  # }
   set i 0
     while {$i < [llength $args]} {
         set item [lindex $args $i]
@@ -581,8 +576,9 @@ proc rmk_precip {args} {
   playSilence 200
 }
 
-# daytime minimal/maximal temperature
-proc _rmk_minmaxtemp {max min} {
+# daytime minimal/maximal temperature (не проверено)
+proc rmk_minmaxtemp {max min} {
+  puts "rmk_precipitation: $max $min"
   playMsg "daytime"
   playMsg "temperature"
   playMsg "maximum"
@@ -606,7 +602,7 @@ proc _rmk_minmaxtemp {max min} {
 }
 
 # recent temperature and dewpoint in RMK section
-proc _rmk_tempdew {temp dewpt} {
+proc rmk_tempdew {temp dewpt} {
   playMsg "re"
   playMsg "temperature"
   playNumberRu $temp "male"
@@ -632,8 +628,9 @@ proc windshift {val} {
 }
 
 
-# QFE value
-proc _qfe {val} {
+# QFE value (не проверено)
+proc qfe {val} {
+  puts "qfe: $val"
   playMsg "qfe"
   playNumberRu $val "male"
   playUnit $val "unit_hPa"
@@ -642,7 +639,7 @@ proc _qfe {val} {
 }
 
 
-# runwaystate
+# runwaystate (проверено)
 # runway 24 left wet_or_water_patches contamination 51 to 100 percent deposit_depth 1 unit_mms friction_coefficient 0.36
 proc runwaystate args {
   puts "runwaystate: $args"
@@ -678,10 +675,6 @@ proc runwaystate args {
     playSilence 200
 
 }
-
-
-
-
 
 
 # output numbers
