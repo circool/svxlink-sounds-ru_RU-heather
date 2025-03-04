@@ -3,13 +3,8 @@
 # aka R2ADU
 
 
-###############################################################################
-# Руский синтаксис для воспроизведения времени
-# Процедура для формирования строки времени (без текстовых представлений)
-# TODO: 
-# ошибки при формировании минут (одна (1f) минута (minute), две (2f) минуты (minute1), три-четыре (3-4) минуты (minute1), далее пять-девятнадцать (5-19) минут(minuts))
-# для значений 20-59 повторяется - 21 минута, 25 минут, 41 минута, 59 минут
 
+# Руский синтаксис для воспроизведения времени
 proc playTime {hour minute} {
     variable Logic::CFG_TIME_FORMAT
 
@@ -41,10 +36,26 @@ proc playTime {hour minute} {
         playMsg "Default" "0"
         playMsg "Default" "hours"
     } elseif {$hour == 1 || $hour == 21} {
-        playMsg "Default" $hour
+        # Для 1 и 21 часа используем "hour"
+        if {$hour == 21} {
+            playMsg "Default" "2X"
+            playMsg "Default" "1"
+        } else {
+            playMsg "Default" $hour
+        }
         playMsg "Default" "hour"  ;# 1 час, 21 час
     } elseif {($hour >= 2 && $hour <= 4) || ($hour >= 22 && $hour <= 24)} {
-        playMsg "Default" $hour
+        # Для часов от 20 и выше, если число не кратно 10, разбиваем на десятки и единицы
+        if {$hour >= 20 && $hour % 10 != 0} {
+            set hourTens [expr {$hour / 10}]
+            set hourUnits [expr {$hour % 10}]
+            playMsg "Default" "${hourTens}X"
+            if {$hourUnits > 0} {
+                playMsg "Default" "$hourUnits"
+            }
+        } else {
+            playMsg "Default" $hour
+        }
         playMsg "Default" "hour1"  ;# 2-4 часа, 22-24 часа
     } elseif {$hour >= 5 && $hour <= 20} {
         playMsg "Default" $hour
@@ -99,239 +110,131 @@ proc playTime {hour minute} {
     }
 }
 
-# Руский синтаксис для воспроизведения чисел
-# Параметры:
-#  number число
-#  gender строка - род единицы измерения (male,female,neuter)
-#
-# Правила формирования результата (аргумент для playMsg):
-# числа от 0 до 19: одно строковое значение ("0","2","3"..."19")
-# числа от 20: 
-# если число кратно 10, используются одностроковые значения (30 - "30", 50 - "50") 
-# иначе десятки дополняются символом "X" b создается составное значение (25 - "20X" + "5", 530 - "500"+"30", 431 - "400"+"30X"+"1" )
-#
-# Для gender=male:
-# без изменения
-#
-# Для gender=female:
-# если последняя цифра = 1 или 2: добавляется "f" (121 - "100"+"20X"+"1f")
-#
-# Для gender=neuter:
-# если последняя цифра = 1 или 2: добавляется "o" (121 - "100"+"20X"+"1o")
-#
-# Для чисел более 999 тысячи выражаются отдельно, добавлением "thoustand" соответствии с гендерным правилом
-# тысяча - "thoustand", тысяч - "thoustand1", тысячи - "thoustands"
-# 1000 - одна тысяча ("1f"+"thoustand"), 
-# 2000 -  две тысячи ("2f"+"thoustands"), 
-# 3000,4000 - три(четыре) тысячи ("3"("4")+"thoustands"), 
-# 5000 и более - пять тысяч ("5"+"thoustand1")
-
-# Десятичные дроби:
-# Если целая или дробная часть заказчивается на 1 или 2 используются правила для gender=female
-# Между целой и дробной частями вставляется значение (целая, целых) ("integer" ("integer1", "integers") плюс термин "и" ("and")
-# Для чисел заканчивающихся на 1 или используется "integer1", для остальных - "integers"
-
-# Дробная часть дополняется указанием разрядности (десятые доли - "tenth", сотые - "hundredth")
-# Десятые доли обозначаются термином "tenth" в единственном числе, "tenths" в множественном числе "одна десятая" ("1f"+"tenth") или "пять десятых" ("5"+"tenths")
-# Сотые доли обозначаются термином "hundredth" в единственном числе, "hundredths" в множественном числе
-# Например: 2571.11 - "две тысячи пятьсот семьдесят одна целая и одинадцать сотых" ("2f"+"thoustands"+"500"+"70"+"1f"+"integer"+"11"+"hundredths")
-#
 
 
-# Процедура для воспроизведения чисел на русском языке
-proc playNumberRuss {number gender} {
-    # Проверка на корректность числа
-    if {![regexp {^\s*([+-])?(\d*)(?:\.(\d+))?\s*$} $number -> sign integer fraction]} {
-        puts "*** ERROR[playNumberRuss]: Invalid number '$number'"
-        return
-    }
 
-    # Если целая часть пуста, устанавливаем её в "0"
-    if {[string length "$integer"] == 0} {
-        set integer "0"
-    }
-
+# Блок playNumber 
+# Воспроизведение чисел в соответствием с правилами произношения цифр в русском языке.
+proc playNumberRu { value gender } {
+    
     # Обработка отрицательных чисел
-    if {$sign == "-"} {
+    set isNegative [expr {$value < 0}]
+    if {$isNegative} {
         playMsg "Default" "minus"
     }
+    set absValue [expr {abs($value)}]
 
-    # Обработка дробной части
-    if {$fraction != ""} {
-        playNumberRuss $integer $gender
-        playIntegerSuffix $integer
-			  playMsg "Default" "and"
-        playFraction $fraction $gender
-        return
+    # Проверка на ноль (включая 0.0, -0, -0.0)
+    if {$absValue == 0} {
+        playMsg "Default" "0"
+        return ;
     }
 
-    # Обработка целой части числа
-    set len [string length $integer]
-    if {$len == 0} {
-        return
-    }
+    # Разделение на целую и дробную части
+    set integerPart [expr {int($absValue)}]
+    set fractionalPart [expr {round(($absValue - $integerPart) * 100)}]
+    set fractionalPart [string trimright [format "%02d" $fractionalPart] "0"]
+    set hasFraction [expr {[string length $fractionalPart] > 0}]
 
-    # Обработка чисел от 0 до 19
-    if {$len <= 2 && $integer < 20} {
-        playNumberWithGender $integer $gender
-        return
-    }
-
-    # Обработка чисел от 20 до 99
-    if {$len == 2} {
-        set tens [string range $integer 0 0]
-        set units [string range $integer 1 1]
-        if {$tens != "0"} {
-			  playMsg "Default" "${tens}X"
+    # Обработка целой части
+    if {$integerPart != 0} {
+        # Тысячи
+        set thousands [expr {$integerPart / 1000}]
+        set remainder [expr {$integerPart % 1000}]
+        
+        if {$thousands > 0} {
+            playNumberBlock $thousands "female" 1
+            playMsg "Default" [GetThousandForm $thousands]
+            set integerPart $remainder
         }
-        if {$units != "0"} {
-            playNumberWithGender $units $gender
+
+        # Обработка остатка
+        playNumberBlock $integerPart $gender 0
+
+        # Добавление "целая/целых"
+        if {$hasFraction} {
+            set lastTwo [expr {$integerPart % 100}]
+            if {$lastTwo >= 11 && $lastTwo <= 14} {
+                set suffix "integers"
+            } else {
+                set lastDigit [expr {$integerPart % 10}]
+                set suffix [expr {$lastDigit == 1 ? "integer" : "integers"}]
+            }
+            playMsg "Default" $suffix
         }
-        return
     }
 
-    # Обработка чисел от 100 до 999
-    if {$len == 3} {
-        set hundreds [string range $integer 0 0]
-        set remainder [string range $integer 1 end]
-		playMsg "Default" "${hundreds}00"
-        playNumberRuss $remainder $gender
-        return
-    }
-
-    # Обработка чисел больше 999
-    if {$len > 3} {
-        set thousands [string range $integer 0 end-3]
-        set remainder [string range $integer end-2 end]
-        playNumberRuss $thousands $gender
-        playThousandSuffix $thousands
-        playNumberRuss $remainder $gender
-        return
-    }
-}
-
-# Вспомогательная процедура для воспроизведения числа с учётом рода
-proc playNumberWithGender {number gender} {
-    set lastDigit [string index $number end]
-    if {$gender == "female" && ($lastDigit == "1" || $lastDigit == "2")} {
-		playMsg "Default" "${number}f"
-    } elseif {$gender == "neuter" && ($lastDigit == "1" || $lastDigit == "2")} {
-		playMsg "Default" "${number}o"
-    } else {
-		playMsg "Default" "$number"
-    }
-}
-
-# Вспомогательная процедура для добавления суффикса "тысяча", "тысячи" или "тысяч"
-proc playThousandSuffix {number} {
-    set lastDigit [string index $number end]
-    if {$lastDigit == "1"} {
-		playMsg "Default" "thousand"
-    } elseif {$lastDigit == "2" || $lastDigit == "3" || $lastDigit == "4"} {
-		playMsg "Default" "thousands"
-    } else {
-		playMsg "Default" "thousand1"
-    }
-}
-
-# Вспомогательная процедура для добавления суффикса "целая", "целых"
-proc playIntegerSuffix {number} {
-    set lastDigit [string index $number end]
-    if {$lastDigit == "1"} {
-		playMsg "Default" "integer1"
-    } else {
-		playMsg "Default" "integers"
-    }
-}
-
-# Вспомогательная процедура для воспроизведения дробной части
-proc playFraction {fraction gender} {
-    set len [string length $fraction]
-    if {$len == 1} {
-        playNumberWithGender $fraction $gender
-        if {$fraction == "1"} {
-			  playMsg "Default" "tenth"
+    # Дробная часть
+    if {$hasFraction} {
+        playMsg "Default" "and"
+        set fractionalNum [scan $fractionalPart "%d"]
+        playNumberBlock $fractionalNum $gender 0
+        
+        # Определение суффикса
+        set fractionalLen [string length $fractionalPart]
+        set lastTwoFrac [expr {$fractionalNum % 100}]
+        if {$fractionalLen == 1} {
+            set suffix [expr {$lastTwoFrac == 1 ? "tenth" : "tenths"}]
         } else {
-			  playMsg "Default" "tenths"
+            set suffix [expr {$lastTwoFrac == 1 ? "hundredth" : "hundredths"}]
         }
-    } elseif {$len == 2} {
-        set tens [string range $fraction 0 0]
-        set units [string range $fraction 1 1]
-        if {$tens != "0"} {
-			  playMsg "Default" "${tens}X"
-        }
-        if {$units != "0"} {
-            playNumberWithGender $units $gender
-        }
-        if {$fraction == "01"} {
-			  playMsg "Default" "hundredth"
-        } else {
-            playMsg "Default" "hundredths"
-        }
+        playMsg "Default" $suffix
     }
 }
 
+# Вспомогательная процедура для обработки чисел в диапазоне 0-999
+proc playNumberBlock { number gender isThousand } {
+    set num [expr {int($number)}]
+    set values {900 800 700 600 500 400 300 200 100 90 80 70 60 50 40 30 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1}
 
-# Вспомогательная процедура для воспроизведения числа с учётом рода
-proc playNumberWithGender {number gender} {
-    set lastDigit [string index $number end]
-    if {$gender == "female" && ($lastDigit == "1" || $lastDigit == "2")} {
-        playMsg "Default" "${number}f"
-    } elseif {$gender == "neuter" && ($lastDigit == "1" || $lastDigit == "2")} {
-        playMsg "Default" "${number}o"
+    foreach val $values {
+        while {$num >= $val} {
+            set block $val
+            # Добавляем суффикс только для 1 и 2 в нужных контекстах
+            if {($val == 1 || $val == 2) && ($gender eq "female" || $gender eq "neuter")} {
+                append block [expr {$gender eq "female" ? "f" : "o"}]
+            }
+            playMsg "Default" $block
+            set num [expr {$num - $val}]
+        }
+    }
+}
+# Вспомогательная процедура для определения формы слова ТЫСЯЧА
+proc GetThousandForm { number } {
+    set lastTwo [expr {$number % 100}]
+    if {$lastTwo >= 11 && $lastTwo <= 14} {
+        return "thousand1"
+    }
+    set lastDigit [expr {$number % 10}]
+    return [expr {
+        $lastDigit == 1 ? "thousand" :
+        ($lastDigit >= 2 && $lastDigit <= 4) ? "thousands" : "thousand1"
+    }]
+}
+# /блок playNumber
+
+# Получение формы единицы измерения
+# Создано для MetarInfo, но возможно и здесь пригодиться  
+proc playUnit {value unit} {
+    # Проверяем, есть ли дробная часть (для дробный частей используем форму от слова "целая/целых")
+    if {[regexp {\.} $value]} {
+        set unit "${unit}1"
     } else {
-        playMsg "Default" "$number"
-    }
-}
-
-# Вспомогательная процедура для добавления суффикса "тысяча", "тысячи" или "тысяч"
-proc playThousandSuffix {number} {
-    set lastDigit [string index $number end]
-    if {$lastDigit == "1"} {
-        playMsg "Default" "thousand"
-    } elseif {$lastDigit == "2" || $lastDigit == "3" || $lastDigit == "4"} {
-        playMsg "Default" "thousands"
-    } else {
-        playMsg "Default" "thousand1"
-    }
-}
-
-# Вспомогательная процедура для добавления суффикса "целая", "целых"
-proc playIntegerSuffix {number} {
-    set lastDigit [string index $number end]
-    if {$lastDigit == "1"} {
-        playMsg "Default" "integer1"
-    } else {
-        playMsg "Default" "integers"
-    }
-}
-
-# Вспомогательная процедура для воспроизведения дробной части
-proc playFraction {fraction gender} {
-    set len [string length $fraction]
-    if {$len == 1} {
-        playNumberWithGender $fraction $gender
-        if {$fraction == "1"} {
-            playMsg "Default" "tenth"
+        # Получаем последнюю цифру числа
+        set lastDigit [string index $value end]
+        
+        # Определяем правильную форму единицы измерения
+        if {$lastDigit == 1} {
+            # градус, минута
+            set unit "${unit}"
+        } elseif {$lastDigit == 2 || $lastDigit == 3 || $lastDigit == 4} {
+            # градуса, минуты
+            set unit "${unit}1"
         } else {
-            playMsg "Default" "tenths"
-        }
-    } elseif {$len == 2} {
-        set tens [string range $fraction 0 0]
-        set units [string range $fraction 1 1]
-        if {$tens != "0"} {
-            playMsg "Default" "${tens}X"
-        }
-        if {$units != "0"} {
-            playNumberWithGender $units $gender
-        }
-        if {$fraction == "01"} {
-            playMsg "Default" "hundredth"
-        } else {
-            playMsg "Default" "hundredths"
+            # градусов, минут
+            set unit "${unit}s"
         }
     }
+    
+    playMsg "Default" $unit
 }
-
-
-
