@@ -3,31 +3,22 @@
 # aka R2ADU
 
 
-# Исправление для модуля EchoLink
-# by R2ADU
-#
-#
-
-###############################################################################
-#
-# EchoLink module event handlers
-#
-###############################################################################
-
-
-#
-# This is the namespace in which all functions and variables below will exist.
-# The name must match the configuration variable "NAME" in the
-# [ModuleEchoLink] section in the configuration file. The name may be changed
-# but it must be changed in both places.
-#
+# EchoLink
 namespace eval EchoLink {
+
+#
+# Это "перегруженная" форма вызова playUnit которая использует текущее простаранство имен как первый параметр,
+# позволяя упростить вызов из разных пространств, не указывая модуль из которого она вызывается
+#
+proc playUnit {value unit} {
+  variable module_name;
+  ::playUnit $module_name $value $unit;
+}
 
 # Произносит полученное число и добавляет (1 подключенная станция = "", 2...4 подключенные станции - ""+1, 5... подключенных станций = ""+s)
 proc playQuantityConnectedStations {qty} {
   playNumberRu $qty "female"
   playUnit $qty "connected_station"
-
 }	
 
 # Отчет о состоянии

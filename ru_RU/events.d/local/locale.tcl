@@ -127,7 +127,7 @@ proc playNumberRu { value gender } {
     # Проверка на ноль (включая 0.0, -0, -0.0)
     if {$absValue == 0} {
         playMsg "Default" "0"
-        return ;
+        return ;# Прекращаем выполнение
     }
 
     # Разделение на целую и дробную части
@@ -137,30 +137,38 @@ proc playNumberRu { value gender } {
     set hasFraction [expr {[string length $fractionalPart] > 0}]
 
     # Обработка целой части
-    if {$integerPart != 0} {
-        # Тысячи
-        set thousands [expr {$integerPart / 1000}]
-        set remainder [expr {$integerPart % 1000}]
-        
-        if {$thousands > 0} {
-            playNumberBlock $thousands "female" 1
-            playMsg "Default" [GetThousandForm $thousands]
-            set integerPart $remainder
-        }
-
-        # Обработка остатка
-        playNumberBlock $integerPart $gender 0
-
-        # Добавление "целая/целых"
-        if {$hasFraction} {
-            set lastTwo [expr {$integerPart % 100}]
-            if {$lastTwo >= 11 && $lastTwo <= 14} {
-                set suffix "integers"
-            } else {
-                set lastDigit [expr {$integerPart % 10}]
-                set suffix [expr {$lastDigit == 1 ? "integer" : "integers"}]
+    if {$integerPart != 0 || $hasFraction} {
+        # Если целая часть нулевая, но есть дробная, добавляем "0 целых"
+        if {$integerPart == 0 && $hasFraction} {
+            playMsg "Default" "0"
+            playMsg "Default" "integers"
+        } else {
+            # Тысячи
+            set thousands [expr {$integerPart / 1000}]
+            set remainder [expr {$integerPart % 1000}]
+            
+            if {$thousands > 0} {
+                playNumberBlock $thousands "female" 1
+                playMsg "Default" [GetThousandForm $thousands]
+                set integerPart $remainder
             }
-            playMsg "Default" $suffix
+
+            # Обработка остатка
+            if {$integerPart != 0} {
+                playNumberBlock $integerPart $gender 0
+            }
+
+            # Добавление "целая/целых"
+            if {$hasFraction} {
+                set lastTwo [expr {$integerPart % 100}]
+                if {$lastTwo >= 11 && $lastTwo <= 14} {
+                    set suffix "integers"
+                } else {
+                    set lastDigit [expr {$integerPart % 10}]
+                    set suffix [expr {$lastDigit == 1 ? "integer" : "integers"}]
+                }
+                playMsg "Default" $suffix
+            }
         }
     }
 
@@ -189,8 +197,24 @@ proc playNumberBlock { number gender isThousand } {
 
     foreach val $values {
         while {$num >= $val} {
+            # Обработка десятков 20-90, которые заканчиваются на 0
+            if {$val >= 20 && $val <= 90 && $val % 10 == 0} {
+                set remainder_after [expr {$num - $val}]
+                if {$remainder_after > 0} {
+                    set tens [expr {$val / 10}]
+                    set block "${tens}X"
+                    playMsg "Default" $block
+                    set num [expr {$num - $val}]
+                    continue
+                } else {
+                    playMsg "Default" $val
+                    set num [expr {$num - $val}]
+                    continue
+                }
+            }
+            
+            # Стандартная обработка для остальных значений
             set block $val
-            # Добавляем суффикс только для 1 и 2 в нужных контекстах
             if {($val == 1 || $val == 2) && ($gender eq "female" || $gender eq "neuter")} {
                 append block [expr {$gender eq "female" ? "f" : "o"}]
             }
@@ -213,10 +237,11 @@ proc GetThousandForm { number } {
 }
 # /блок playNumber
 
-# Получение формы единицы измерения
-# Создано для MetarInfo, но возможно и здесь пригодиться  
-proc playUnit {value unit} {
-    # Проверяем, есть ли дробная часть (для дробный частей используем форму от слова "целая/целых")
+# Произношение формы единицы измерения (градус/градуса|метр/метра)
+# Используется в модулях MetarInfo, EchoLink  
+# Звуковые файлы уже учитвают род единицы измерения, так что нам остается только понять, это единственная или множественная форма
+proc playUnit {modulename value unit} {
+    # Проверяем, есть ли дробная часть (для дробный частей используем форму от слова "целая/целых" - одна целая | семь целых)
     if {[regexp {\.} $value]} {
         set unit "${unit}1"
     } else {
@@ -234,7 +259,6 @@ proc playUnit {value unit} {
             # градусов, минут
             set unit "${unit}s"
         }
-    }
-    
-    playMsg "Default" $unit
+    }    
+    playMsg $modulename $unit
 }

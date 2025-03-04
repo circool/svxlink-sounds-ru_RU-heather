@@ -98,15 +98,9 @@ namespace eval Logic {
 	# Убираем лишние нули и точку
 	set trimmedFq [string trimright $formattedFq ".0"]
 
-	# Проверяем, есть ли десятичная дробь в trimmedFq
-	# if {[string first "." $trimmedFq] != -1} {
-	# 	append unit "1"
-	# }
-
-	# Произносим число и единицу измерения 
+	# Произносим число и единицу измерения пространство имен "Default" 
 	playNumberRu $trimmedFq "female"
-	playUnit $trimmedFq $unit
+	playUnit "Default" $trimmedFq $unit
   }
-
 
 }

@@ -22,30 +22,38 @@ proc playNumberRu { value gender } {
     set hasFraction [expr {[string length $fractionalPart] > 0}]
 
     # Обработка целой части
-    if {$integerPart != 0} {
-        # Тысячи
-        set thousands [expr {$integerPart / 1000}]
-        set remainder [expr {$integerPart % 1000}]
-        
-        if {$thousands > 0} {
-            playNumberBlock $thousands "female" 1
-            playMsg "Default" [GetThousandForm $thousands]
-            set integerPart $remainder
-        }
-
-        # Обработка остатка
-        playNumberBlock $integerPart $gender 0
-
-        # Добавление "целая/целых"
-        if {$hasFraction} {
-            set lastTwo [expr {$integerPart % 100}]
-            if {$lastTwo >= 11 && $lastTwo <= 14} {
-                set suffix "integers"
-            } else {
-                set lastDigit [expr {$integerPart % 10}]
-                set suffix [expr {$lastDigit == 1 ? "integer" : "integers"}]
+    if {$integerPart != 0 || $hasFraction} {
+        # Если целая часть нулевая, но есть дробная, добавляем "0 целых"
+        if {$integerPart == 0 && $hasFraction} {
+            playMsg "Default" "0"
+            playMsg "Default" "integers"
+        } else {
+            # Тысячи
+            set thousands [expr {$integerPart / 1000}]
+            set remainder [expr {$integerPart % 1000}]
+            
+            if {$thousands > 0} {
+                playNumberBlock $thousands "female" 1
+                playMsg "Default" [GetThousandForm $thousands]
+                set integerPart $remainder
             }
-            playMsg "Default" $suffix
+
+            # Обработка остатка
+            if {$integerPart != 0} {
+                playNumberBlock $integerPart $gender 0
+            }
+
+            # Добавление "целая/целых"
+            if {$hasFraction} {
+                set lastTwo [expr {$integerPart % 100}]
+                if {$lastTwo >= 11 && $lastTwo <= 14} {
+                    set suffix "integers"
+                } else {
+                    set lastDigit [expr {$integerPart % 10}]
+                    set suffix [expr {$lastDigit == 1 ? "integer" : "integers"}]
+                }
+                playMsg "Default" $suffix
+            }
         }
     }
 
@@ -73,8 +81,24 @@ proc playNumberBlock { number gender isThousand } {
 
     foreach val $values {
         while {$num >= $val} {
+            # Обработка десятков 20-90, которые заканчиваются на 0
+            if {$val >= 20 && $val <= 90 && $val % 10 == 0} {
+                set remainder_after [expr {$num - $val}]
+                if {$remainder_after > 0} {
+                    set tens [expr {$val / 10}]
+                    set block "${tens}X"
+                    playMsg "Default" $block
+                    set num [expr {$num - $val}]
+                    continue
+                } else {
+                    playMsg "Default" $val
+                    set num [expr {$num - $val}]
+                    continue
+                }
+            }
+            
+            # Стандартная обработка для остальных значений
             set block $val
-            # Добавляем суффикс только для 1 и 2 в нужных контекстах
             if {($val == 1 || $val == 2) && ($gender eq "female" || $gender eq "neuter")} {
                 append block [expr {$gender eq "female" ? "f" : "o"}]
             }
@@ -166,14 +190,16 @@ main
 # Пример: 901 - "тысяча", 900 - тысяч, 704-тысячи
 
 # Для композиции stringValue можно использовать только такие строки: 1...20, 30,40,50,60,70,80,90,100,200,300,400,500,600,700,800,900
+# Для композиции когда за десятками следуют единицы используй 2X,3X,4X,5X,6X,7X,8X,9X
 # Для чисел, которые нельзя выразить вышеперечисленными строками вызывается несколько команд playMsg {"Default" $stringValue}
 
 # Например
 # playNumberRu { 415 "male|female|neuter"} => playMsg {"Default" "400"}; playMsg {"Default" "15"}
-# playNumberRu { 731 "male|female|neuter"} => playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
-# playNumberRu { 1731 "male|female|neuter"} => playMsg {"Default" "1f"};  playMsg {"Default" "thousand"}; playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
-# playNumberRu { 2731 "male|female|neuter"} => playMsg {"Default" "2f"};  playMsg {"Default" "thousands"}; playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
-# playNumberRu { 5731 "male|female|neuter"} => playMsg {"Default" "5"};  playMsg {"Default" "thousand1"}; playMsg {"Default" "700"}; playMsg {"Default" "30"}; playMsg {"Default" "1"} 
+# playNumberRu { 430 "male|female|neuter"} => playMsg {"Default" "400"}; playMsg {"Default" "30"}
+# playNumberRu { 731 "male|female|neuter"} => playMsg {"Default" "700"}; playMsg {"Default" "3X"}; playMsg {"Default" "1"} 
+# playNumberRu { 1731 "male|female|neuter"} => playMsg {"Default" "1f"};  playMsg {"Default" "thousand"}; playMsg {"Default" "700"}; playMsg {"Default" "3X"}; playMsg {"Default" "1"} 
+# playNumberRu { 2731 "male|female|neuter"} => playMsg {"Default" "2f"};  playMsg {"Default" "thousands"}; playMsg {"Default" "700"}; playMsg {"Default" "3X"}; playMsg {"Default" "1"} 
+# playNumberRu { 5731 "male|female|neuter"} => playMsg {"Default" "5"};  playMsg {"Default" "thousand1"}; playMsg {"Default" "700"}; playMsg {"Default" "3X"}; playMsg {"Default" "1"} 
 
 # Относится только к блоку тысяч и блоку единиц:
 # если gender=female и последняя цифра = 1 или 2, к ней добавляется "f" напр. playNumberRu { 701 "female" } -> playMsg {"Default" "700"}; playMsg {"Default" "1f"};
@@ -189,11 +215,11 @@ main
 # Обрати внимание
 # Для сотых и десятых долей используй "десятая" или "сотая" когда дробная часть заканчивается на 1, иначе используй "десятых" или "сотых" соответстренно
 # playNumberRu { 2.01 "female" } -> playMsg {"Default" "2f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "hundredth"}
-# playNumberRu { 91.1 "female" } -> playMsg {"Default" "90"}; playMsg {"Default" "1f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "tenths"}
-# playNumberRu { 52.1 "female" } -> playMsg {"Default" "590"}; playMsg {"Default" "1f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "tenths"}
+# playNumberRu { 91.1 "female" } -> playMsg {"Default" "9X"}; playMsg {"Default" "1f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "tenths"}
+# playNumberRu { 52.1 "female" } -> playMsg {"Default" "5X"}; playMsg {"Default" "2f"}; playMsg {"Default" "integer"}; playMsg {"Default" "and"}; playMsg {"Default" "1f"}; playMsg {"Default" "tenths"}
 
 
 # Для чисел дробной части дополняей указанием разрядности (десятые доли - "tenth", сотые - "hundredth")
 # Десятые доли обозначаются термином "tenth" в единственном числе, "tenths" в множественном числе "одна десятая" ("1f"+"tenth") или "пять десятых" ("5"+"tenths")
 # Сотые доли обозначаются термином "hundredth" в единственном числе, "hundredths" в множественном числе
-# Например: 2571.11 - "две тысячи пятьсот семьдесят одна целая и одинадцать сотых" ("2f"+"thousands"+"500"+"70"+"1f"+"integer"+"11"+"hundredths")
+# Например: 2571.11 - "две тысячи пятьсот семьдесят одна целая и одинадцать сотых" ("2f"+"thousands"+"500"+"7X"+"1f"+"integer"+"11"+"hundredths")
