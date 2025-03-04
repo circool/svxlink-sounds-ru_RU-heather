@@ -25,19 +25,6 @@ namespace eval EchoLink {
 
 # Произносит полученное число и добавляет (1 подключенная станция = "", 2...4 подключенные станции - ""+1, 5... подключенных станций = ""+s)
 proc playQuantityConnectedStations {qty} {
-  # if {$qty == 0} {
-  #   playMsg "0"
-  #   playMsg "connected_stations"
-  # } elseif {$qty == 1} {
-  #   playMsg "1f"
-  #   playMsg "connected_station"
-  # } elseif {$qty <= 4} {
-  #   playMsg "${qty}f"
-  #   playMsg "connected_station1"
-  # } else {
-  #   playMsg $qty
-  #   playMsg "connected_stations"
-  # }
   playNumberRu $qty "female"
   playUnit $qty "connected_station"
 
