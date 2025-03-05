@@ -10,9 +10,9 @@ Russian Language Pack for SvxLink Server
 
 Порядок и логика произношения фраз изменена в соответствии с правилами русского языка.
 
-В файле https://github.com/circool/svxlink-sounds-ru_RU-heather/blob/master/TODO.md изложен план действий.
+В файле https://github.com/circool/svxlink-sounds-ru_RU-milana/blob/master/TODO.md изложен план действий.
 
-В файле https://github.com/circool/svxlink-sounds-ru_RU-heather/blob/master/INSTALL.md описан процесс установки.
+В файле https://github.com/circool/svxlink-sounds-ru_RU-milana/blob/master/INSTALL.md описан процесс установки.
 
 Дополнение
 ----------
