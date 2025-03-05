@@ -3,75 +3,47 @@
 # aka R2ADU
 
 
-# Исправление для модуля EchoLink
-# by R2ADU
-#
-#
-
-###############################################################################
-#
-# EchoLink module event handlers
-#
-###############################################################################
-
-
-#
-# This is the namespace in which all functions and variables below will exist.
-# The name must match the configuration variable "NAME" in the
-# [ModuleEchoLink] section in the configuration file. The name may be changed
-# but it must be changed in both places.
-#
+# EchoLink
 namespace eval EchoLink {
 
-# Произносит полученное число и добавляет (1 подключенная станция = "", 2...4 подключенные станции - ""+1, 5... подключенных станций = ""+s)
-proc playQuantityConnectedStations {qty} {
-  # if {$qty == 0} {
-  #   playMsg "0"
-  #   playMsg "connected_stations"
-  # } elseif {$qty == 1} {
-  #   playMsg "1f"
-  #   playMsg "connected_station"
-  # } elseif {$qty <= 4} {
-  #   playMsg "${qty}f"
-  #   playMsg "connected_station1"
-  # } else {
-  #   playMsg $qty
-  #   playMsg "connected_stations"
-  # }
-  playNumberRu $qty "female"
-  playUnit $qty "connected_station"
-
-}	
-
-# Отчет о состоянии
-proc status_report {} {
-  variable num_connected_stations;
-  variable module_name;
-  global active_module;
- 
-  if {$active_module == $module_name} {
-    playQuantityConnectedStations $num_connected_stations
-    playSilence 200
+  #
+  # Это "перегруженная" форма вызова playUnit которая использует текущее пространство имен как первый параметр,
+  # позволяя упростить вызов из разных пространств, не указывая модуль из которого она вызывается
+  #
+  proc playUnit {value unit} {
+    variable module_name;
+    ::playUnit $module_name $value $unit;
   }
-}
 
-#
-# Executed when a request to list all connected stations is received.
-# That is, someone press DTMF "1#" when the EchoLink module is active.
-#
-# 
-# Сообщает количество подключенных станций и перечисляет их позывные
-proc list_connected_stations {connected_stations} {
-  playQuantityConnectedStations $connected_stations
-  
-  if {[llength $connected_stations] != 0} {
-    playSilence 50;
-    playMsg "connected_station_list";
+
+  # Spell an EchoLink callsign
+
+  # Сообщает количество подключенных станций и перечисляет их позывные
+  proc list_connected_stations {connected_stations} {
+    set quantity_connected [llength $connected_stations]
+    playNumberRu $quantity_connected "female"
+    playSilence 50
+    playUnit $quantity_connected "connected_station"
+    playSilence 200
     foreach {call} "$connected_stations" {
-      spellEchoLinkCallsign $call;
-      playSilence 250;
+      spellEchoLinkCallsign $call
+      playSilence 250
     }
   }
-}
+
+
+  # Отчет о состоянии (при получении DTMF *)
+  proc status_report {} {
+    printInfo "status_report called..."
+    variable num_connected_stations
+    variable module_name
+    global active_module
+  
+    if {$active_module == $module_name} {
+      playNumberRu $num_connected_stations "female"
+      playUnit $num_connected_stations "connected_station"
+      playSilence 200
+    }
+  }
 
 }
