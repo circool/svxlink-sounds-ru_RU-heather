@@ -8,8 +8,13 @@ proc playTime {hour minute} {
 	variable Logic::CFG_TIME_FORMAT
 
 	# Проверка корректности формата времени
-	if {$CFG_TIME_FORMAT != 12 && $CFG_TIME_FORMAT != 24} {
-		error "Ошибка: CFG_TIME_FORMAT должен быть 12 или 24"
+	if {$hour < 0 || $hour > 24 || {[string length $hour] > 2} } {
+		puts "*** WARNING: Function playTime received invlalid argument hour: $hour (0-$CFG_TIME_FORMAT)"
+		return
+	}
+	if {$minute < 0 || $minute > 59 || {[string length $hour] > 2} } {
+		puts "*** WARNING: Function playTime received invlalid argument minute: $minute. Must be 0 до 59"
+		return
 	}
 
 	# Корректировка часа для 12-часового формата
