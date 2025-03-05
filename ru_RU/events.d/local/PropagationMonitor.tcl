@@ -7,7 +7,7 @@
 namespace eval PropagationMonitor {
 
 #
-# Это "перегруженная" форма вызова playUnit которая использует текущее простаранство имен как первый параметр,
+# Это "перегруженная" форма вызова playUnit которая использует текущее пространство имен как первый параметр,
 # позволяя упростить вызов из разных пространств, не указывая модуль из которого она вызывается
 #
 proc playUnit {value unit} {
@@ -25,7 +25,6 @@ proc sayBand {band} {
     playNumberRus $number "male"
     playUnit $number unit_$unit
   }
-  
 }
 
 
@@ -40,42 +39,6 @@ proc sayLocator {loc} {
     playNumberRus $part2 "male"
     spellWord $part3
   }
-}
-
-
-
-#
-# Handle E-skip alert from Good DX.
-#
-#   hour - The hour of the alert
-#   min  - The minute of the alert
-#   band - The band it occured on. E.g 2m, 4m, 6m.
-#   from - From locator
-#   to   - To locator
-#
-proc dxrobot_eskip_alert {hour min band {from ""} {to ""}} {
-  playAlertSound
-  playSilence 500
-  
-  playTime $hour $min
-  playSilence 200
-  
-  playMsg "sporadic_e_opening"
-  sayBand $band
-  playSilence 500
-  playMsg "sporadic_e_opening"
-  sayBand $band
-  
-  if {"$from" ne "" && "$to" ne ""} {
-    playSilence 500
-    playMsg "band_open_from"
-    spellWord $from
-    playSilence 100
-    playMsg "to"
-    playSilence 100
-    spellWord $to
-  }
-  playSilence 200
 }
 
 
@@ -104,7 +67,6 @@ proc vhfdx_sporadic_e_opening {band muf locator} {
 }
 
 
-
 #
 # Handle aurora opening alert from VHFDX.
 #
@@ -112,7 +74,7 @@ proc vhfdx_sporadic_e_opening {band muf locator} {
 #   lat  - Lowest latitude where aurora is active
 #   call - The call of the reporting station
 #   loc  - The locator of the reporting station
-# TODO: ТУТ НУЖНО ИСПОЛЬЗОВАТЬ КОНСТРУКЦИЮ "ДО .... ГРАДСА/ГРАДУСОВ"
+# TODO: ТУТ НУЖНО ИСПОЛЬЗОВАТЬ КОНСТРУКЦИЮ "ДО .... ГРАДУСА/ГРАДУСОВ"
 proc vhfdx_aurora_opening {band lat call loc} {
   playAlertSound
   for {set i 0} {$i < 2} {set i [expr $i + 1]} {
@@ -120,14 +82,11 @@ proc vhfdx_aurora_opening {band lat call loc} {
     sayBand $band
     playSilence 200
     playMsg down_to_lat
-    playNumber $lat
-    playMsg unit_deg
+    playNumberRus $lat "male_cardinal"
+    playUnit $lat unit_deg
     playSilence 1000
   }
 }
-
-
-
 
 # end of namespace
 }

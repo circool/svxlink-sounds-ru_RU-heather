@@ -6,17 +6,17 @@
 # EchoLink
 namespace eval EchoLink {
 
-#
-# Это "перегруженная" форма вызова playUnit которая использует текущее простаранство имен как первый параметр,
-# позволяя упростить вызов из разных пространств, не указывая модуль из которого она вызывается
-#
-proc playUnit {value unit} {
-  variable module_name;
-  ::playUnit $module_name $value $unit;
-}
+  #
+  # Это "перегруженная" форма вызова playUnit которая использует текущее пространство имен как первый параметр,
+  # позволяя упростить вызов из разных пространств, не указывая модуль из которого она вызывается
+  #
+  proc playUnit {value unit} {
+    variable module_name;
+    ::playUnit $module_name $value $unit;
+  }
 
 
-# Spell an EchoLink callsign
+  # Spell an EchoLink callsign
 
   # Сообщает количество подключенных станций и перечисляет их позывные
   proc list_connected_stations {connected_stations} {
