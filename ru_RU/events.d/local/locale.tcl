@@ -6,7 +6,6 @@
 # Руский синтаксис для воспроизведения времени
 proc playTime {hour minute} {
 	variable Logic::CFG_TIME_FORMAT
-
 	# Проверка корректности формата времени
 	if {$CFG_TIME_FORMAT != 12 && $CFG_TIME_FORMAT != 24} {
 		error "Ошибка: CFG_TIME_FORMAT должен быть 12 или 24"
@@ -73,7 +72,11 @@ proc playTime {hour minute} {
 
 		if {$minute < 20} {
 			# Для чисел от 0 до 19 используем одностроковое значение
-			playMsg "Default" $minute
+			if {$minute == 1 || $minute == 2} {
+				playMsg "Default" "${minute}f"
+			} else {
+				playMsg "Default" $minute
+			}
 		} elseif {$minute % 10 == 0} {
 			# Если минуты кратны 10, используем одностроковое значение
 			playMsg "Default" $minute
@@ -108,7 +111,6 @@ proc playTime {hour minute} {
 		playMsg "Core" "$ampm"
 	}
 }
-
 
 # Блок playNumber
 # Воспроизведение чисел в соответствием с правилами произношения цифр в русском языке.
