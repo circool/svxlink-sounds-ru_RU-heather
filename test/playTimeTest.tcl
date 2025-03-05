@@ -4,8 +4,8 @@
 
 # Результат должен соответствовать правилам русского языка
 # числа от 0 до 19: одно строковое значение ("0","2","3"..."19")
-# числа от 20: 
-# если число кратно 10, используются одностроковые значения (30 - "30", 50 - "50") 
+# числа от 20:
+# если число кратно 10, используются одностроковые значения (30 - "30", 50 - "50")
 # иначе десятки дополняются символом "X" и создается составное значение (24 - "2X" + "4")
 
 # Для минут (gender=female):
@@ -29,7 +29,6 @@ proc playMsg {category message} {
 }
 
 # Процедура playTime, которая обрабатывает время и вызывает playMsg
-
 proc playTime {hour minute} {
     # variable Logic::CFG_TIME_FORMAT
     global CFG_TIME_FORMAT
@@ -99,7 +98,11 @@ proc playTime {hour minute} {
 
         if {$minute < 20} {
             # Для чисел от 0 до 19 используем одностроковое значение
-            playMsg "Default" $minute
+            if {$minute == 1 || $minute == 2} {
+                playMsg "Default" "${minute}f"
+            } else {
+                playMsg "Default" $minute
+            }
         } elseif {$minute % 10 == 0} {
             # Если минуты кратны 10, используем одностроковое значение
             playMsg "Default" $minute
@@ -134,6 +137,7 @@ proc playTime {hour minute} {
         playMsg "Core" "$ampm"
     }
 }
+
 # Процедура для получения параметров из командной строки и вызова playTime
 proc main {} {
     global argv

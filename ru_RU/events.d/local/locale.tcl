@@ -73,7 +73,11 @@ proc playTime {hour minute} {
 
 		if {$minute < 20} {
 			# Для чисел от 0 до 19 используем одностроковое значение
-			playMsg "Default" $minute
+			if {$minute == 1 || $minute == 2} {
+				playMsg "Default" "${minute}f"
+			} else {
+				playMsg "Default" $minute
+			}
 		} elseif {$minute % 10 == 0} {
 			# Если минуты кратны 10, используем одностроковое значение
 			playMsg "Default" $minute
