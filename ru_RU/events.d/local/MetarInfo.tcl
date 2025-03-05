@@ -27,24 +27,6 @@ proc getGender { unit } {
     return "male"
 }
 
-# Очистка принудительно заданной формы единицы измерения
-# Логика модуля MetarInfo принудительно задает форму для идиниц измерения по правилам английского языка (добавляет 's' в конец слова)
-# Нам такой метод только мешает
-# proc clearUnitForm unit {
-#   # Проверяем, начинается ли строка с "unit_"
-#   if {[string range $unit 0 4] ne "unit_"} {
-#     return $unit
-#   }
-
-#   # Проверяем, заканчивается ли строка на "s"
-#   if {[string index $unit end] eq "s"} {
-#     # Возвращаем строку без последнего символа
-#     return [string range $unit 0 end-1]
-#   }
-
-#   # Если условия не выполнены, возвращаем строку без изменений
-#   return $unit
-# }
 
 # Обрабатывает строки с несколькими значениями, например пара значение-единица измерения
 proc handleMultiplyReports {args {anounce ""}} {
@@ -143,8 +125,7 @@ proc metreport_time item {
 # visibility / Видимость 5 километров 900 метров  (более чем ... )
 proc visibility args {
   # puts "visibility: $args"
-  playMsg "visibility"
-  handleMultiplyReports "visibility" args  
+  handleMultiplyReports $args "visibility"   
 }
 
 
