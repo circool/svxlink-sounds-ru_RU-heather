@@ -1,4 +1,4 @@
-# svxlink-sounds-ru_RU-heather
+# svxlink-sounds-ru_RU-milana
 Russian Language Pack for SvxLink Server
 
 Русский языковой пакет для сервера SVXLINK
