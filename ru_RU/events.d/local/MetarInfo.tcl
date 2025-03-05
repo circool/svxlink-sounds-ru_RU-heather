@@ -5,8 +5,9 @@
 # MetarInfo
 namespace eval MetarInfo {
 
+
 # Это "перегруженная" форма вызова playUnit которая использует текущее простаранство имен как первый параметр,
-# позволяя упростить вызов из разных пространств, не указывая модуль из которого она вызывается
+# позволяя упростить вызов из текущего пространства, не указывая модуль из которого она вызывается
 #
 proc playUnit {value unit} {
   variable module_name;
@@ -25,6 +26,79 @@ proc getGender { unit } {
     # Все остальные случаи - мужской род
     return "male"
 }
+
+# Очистка принудительно заданной формы единицы измерения
+# Логика модуля MetarInfo принудительно задает форму для идиниц измерения по правилам английского языка (добавляет 's' в конец слова)
+# Нам такой метод только мешает
+# proc clearUnitForm unit {
+#   # Проверяем, начинается ли строка с "unit_"
+#   if {[string range $unit 0 4] ne "unit_"} {
+#     return $unit
+#   }
+
+#   # Проверяем, заканчивается ли строка на "s"
+#   if {[string index $unit end] eq "s"} {
+#     # Возвращаем строку без последнего символа
+#     return [string range $unit 0 end-1]
+#   }
+
+#   # Если условия не выполнены, возвращаем строку без изменений
+#   return $unit
+# }
+
+# Обрабатывает строки с несколькими значениями, например пара значение-единица измерения
+proc handleMultiplyReports {args {anounce ""}} {
+  
+  # Если анонс не пустой, воспроизводим его
+  if {$anounce ne ""} {
+    playMsg $anounce
+  }
+  
+  set i 0
+  while {$i < [llength $args]} {
+    set item [lindex $args $i]
+    # За числом может идти единица измерения или какое-либо другое слово
+    if {[regexp {\d+} $item]} {
+      # Обработка числового значения
+      set val $item
+      incr i
+      
+      if {$i < [llength $args]} {
+        set unit [lindex $args $i]
+        
+        # Устанавливаем gender в зависимости от значения unit
+        if {[string match "unit_*" $unit]} {
+          set gender [getGender $unit]
+        } else {
+          set gender "male"
+        }
+        
+        playNumberRu $val $gender
+        
+        # Для слов выражающих единицу измерения 
+        if {[string match "unit_*" $unit]} {
+          # Удаляем принудительно заданную логикой множественную форму 
+          if {[string index $unit end] eq "s"} {
+            set unit [string range $unit 0 end-1]
+          }
+          playUnit $val $unit
+        } else {
+          # Вызываем playMsg для слов не выражающих единицы измерения
+          playMsg $unit
+        }
+        incr i
+      } else {
+        playNumberRu $val "male"
+      }
+    } else {
+      # Обработка нечисловых значений
+      playMsg $item
+      incr i
+    }
+  }
+  playSilence 200
+}
+
 
 # Для улучшения восприятия для ходовых фраз подготовлены фразы вместо коипоновки отдельных слов
 
@@ -55,9 +129,9 @@ proc metar_not_valid {} {
 }
 
 
-# MET-report TIME / Время отчета (не проверено)
+# MET-report TIME / Время отчета
 proc metreport_time item {
-  puts "metreport_time: $item"
+  # puts "metreport_time: $item"
   playMsg "metreport_time"
   scan [string range $item 0 1] %d hr
   scan [string range $item 2 3] %d mn
@@ -67,57 +141,16 @@ proc metreport_time item {
 
 
 # visibility / Видимость 5 километров 900 метров  (более чем ... )
-# !!! тут разобраться, 
-# значения состоят из нескольких аргументов, цифровые и буквенные
-# например 5 units_kms 500 units_ms
-# ЗНАЧЕНИЕ УЖЕ С СКЛОНЕНИЕМ ВО МНОЖЕСТВЕННОМ ЧИСЛЕ!!!
 proc visibility args {
-  puts "visibility: $args"
-  playMsg "visibility";
-  # foreach item $args {
-  #   if [regexp {(\d+)} $item] {
-  #        playNumberRu $item "male";
-  #   } else {
-  #     playMsg $item;
-  #   }   
-  #   playSilence 100;
-  # }
-  # playSilence 200;
-  set i 0
-    while {$i < [llength $args]} {
-        set item [lindex $args $i]
-        if {[regexp {\d+} $item]} {
-            # Обработка числового значения
-            set val $item
-            incr i
-            
-            if {$i < [llength $args]} {
-                set unit [lindex $args $i]
-                set gender [getGender $unit]
-                playNumberRu $val $gender
-                
-                # Проверяем префикс unit_
-                if {[string match "unit_*" $unit]} {
-                    playUnit $val $unit
-                } else {
-                    playMsg $unit ;# Вызываем playMsg для слов
-                }
-                incr i
-            } else {
-                playNumberRu $val "male"
-            }
-        } else {
-            # Обработка нечисловых значений
-            playMsg $item
-            incr i
-        }
-    }
+  # puts "visibility: $args"
+  playMsg "visibility"
+  handleMultiplyReports "visibility" args  
 }
 
 
-# temperature (не проверено)
+# temperature
 proc temperature {temp} {
-  puts "temperature: $temp"
+  # puts "temperature: $temp"
   playMsg "temperature"
   playSilence 100
   if {$temp == "not"} {
@@ -130,15 +163,14 @@ proc temperature {temp} {
     }   
     playNumberRu $temp "male"
     playUnit $temp "unit_degree"
-    playSilence 100;
   }
   playSilence 200
 }
 
 
-# dewpoint / Точка росы (не проверено)
+# dewpoint / Точка росы
 proc dewpoint {dewpt} {
-  puts "dewpoint: $dewpt"
+  # puts "dewpoint: $dewpt"
   playMsg "dewpoint"
   playSilence 100
   if {$dewpt == "not"} {
@@ -147,30 +179,23 @@ proc dewpoint {dewpt} {
   } else {   
     playNumberRu $dewpt "male"
     playUnit $dewpt "unit_degree"
-    playSilence 100;    
   }
   playSilence 200
 }
 
 
-# sea level pressure // (не проверено)
+# sea level pressure
 proc slp {slp} {
-  puts "slp: $slp"
+  # puts "slp: $slp"
   playMsg "slp"
-  puts "sea level pressure: $slp" 
-  
   playNumberRu $slp "male"
-  puts $slp
-
   playUnit $slp "unit_hPa"
-  puts "unit_hPa"
-  
   playSilence 200
 }
 
-# flightlevel (не проверено)
+# flightlevel
 proc flightlevel {level} {
-  puts "flightlevel: $level"
+  # puts "flightlevel: $level"
   playMsg "flightlevel" 
   playNumberRu $level "male"
   playSilence 200
@@ -180,9 +205,9 @@ proc flightlevel {level} {
 # No specific reports taken
 
 
-# peakwind (не проверено)
+# peakwind
 proc peakwind {val} {
-  puts "peakwind: $val"
+  # puts "peakwind: $val"
   playMsg "pk_wnd";
   playSilence 100;
   playNumberRu $val "male";
@@ -192,7 +217,7 @@ proc peakwind {val} {
 
 # wind
 proc wind {deg {vel 0 } {unit 0} {gusts 0} {gvel 0}} {
-  puts "wind: deg=$deg vel=$vel unit=$unit gusts=$gusts gvel=$gvel"
+  # puts "wind: deg=$deg vel=$vel unit=$unit gusts=$gusts gvel=$gvel"
   set vel [scan $vel %d]
   set gusts [scan $gusts %d]
   
@@ -204,108 +229,69 @@ proc wind {deg {vel 0 } {unit 0} {gusts 0} {gvel 0}} {
     playSilence 200
     playNumberRu $vel "male"
     playUnit $vel $unit
-
-
   } else {
     # ветер ... м/сек на ... градусов
     playNumberRu $vel "male"
     playUnit $vel $unit
-    # speakNumber $vel $unit
     playSilence 100
     
     playMsg "at"
     playSilence 100
     playNumberRu $deg "male"
     playUnit $deg "unit_degree" 
-    #speakNumber $deg "unit_degree"
     playSilence 100
     
     if {$gusts > 0} {
       playMsg "gusts_up"
       playNumberRu $gusts "male"
       playUnit $gusts $gvel
-      #speakNumber $gusts $gvel
     }
   }
   playSilence 200
 }
 
 
-# weather actually (не проверено)
-# Несколько пар значений
+# weather actually
+# Несколько пар значений без анонса
 proc actualWX args {
-  puts "actualWX: $args"
-  set i 0
-  while {$i < [llength $args]} {
-      set item [lindex $args $i]
-      # Проверяем является ли текущий элемент числовым значением
-      if {[regexp {\d+} $item]} {
-          # Обрабатываем как значение
-          set val $item
-          incr i
-          
-          # Проверяем наличие единицы измерения следом
-          if {$i < [llength $args]} {
-              set unit [lindex $args $i]
-              set gender [getGender $unit]
-              playNumberRu $val $gender
-              playUnit $val $unit
-              incr i
-          } else {
-              # Если единицы нет - используем male и не вызываем playUnit
-              playNumberRu $val "male"
-          }
-      } else {
-          # Обработка нечисловых значений как простых сообщений
-          playMsg $item
-          incr i
-      }
-  }
-  playSilence 200
+  # puts "actualWX: $args"
+  handleMultiplyReports $args ""
 }
 
 
-# wind varies $from $to (не проверено)
+# wind varies $from $to
 proc windvaries {from to} {
-  puts "windvaries: $from $to"
+  # puts "windvaries: $from $to"
   playMsg "wind"
   playSilence 50
   playMsg "varies_from"
   playSilence 100
   playNumberRu $from "male"
-  #  playNumber $from
   playSilence 100
   playMsg "to"
   playSilence 100
   playNumberRu $to "male"
   playUnit $to "unit_degree"
-  #  speakNumber $to "unit_degree"
   playSilence 200
 }
 
 
-# Peak WIND (не проверено)
-# Перегрузка
+# Peak WIND
+# Перегрузка peakwind?
 proc peakwind {deg kts hh mm} {
-  puts "peakwind: $deg $kts $hh $mm"
+  # puts "peakwind: $deg $kts $hh $mm"
   playMsg "pk_wnd"
   playMsg "from"
   playSilence 100
   playNumberRu $deg "male"
   playUnit $deg "unit_kt"
-  #  speakNumber $deg "unit_degree"
   playSilence 100
    
   playNumberRu $kts "male"
   playUnit $kts "unit_kt"
-  #  speakNumber $kts "unit_kt"
   playSilence 100
    
   playMsg "at"
-  #  if {$hh != "XX"} {
-  #     speakNumber $hh "hour"
-  #  }
-  #  speakNumber $mm "minute"
   playTime $hh $mm
 
   playMsg "utc"
@@ -313,9 +299,9 @@ proc peakwind {deg kts hh mm} {
 }
 
 
-# ceiling varies $from $to (не проверено)
+# ceiling varies $from $to
 proc ceilingvaries {from to} {
-   puts "ceiling varies $from $to"
+  #  puts "ceiling varies $from $to"
    playMsg "ca"
    playSilence 50
    playMsg "varies_from"
@@ -345,36 +331,11 @@ proc all_rwy_clear {} {
 }
 
 
-# runway visual range (не проверено)
+# runway visual range
+# Несколько аргументов без анонса
 proc rvr args {
-    puts "rvr: $args"
-    set i 0
-    while {$i < [llength $args]} {
-        set item [lindex $args $i]
-        # Проверяем является ли текущий элемент числовым значением
-        if {[regexp {\d+} $item]} {
-            # Обрабатываем как значение
-            set val $item
-            incr i
-            
-            # Проверяем наличие единицы измерения следом
-            if {$i < [llength $args]} {
-                set unit [lindex $args $i]
-                set gender [getGender $unit]
-                playNumberRu $val $gender
-                playUnit $val $unit
-                incr i
-            } else {
-                # Если единицы нет - используем male и не вызываем playUnit
-                playNumberRu $val "male"
-            }
-        } else {
-            # Обработка нечисловых значений как простых сообщений
-            playMsg $item
-            incr i
-        }
-    }
-    playSilence 200
+  # puts "rvr: $args"
+  handleMultiplyReports $args ""  
 }
 
 
@@ -384,39 +345,39 @@ proc rvr args {
 
 # Runway designator
 
-# time (не проверено)
+# time
 proc utime {utime} {
-  puts "utime: $utime"
-   set hr [string range $utime 0 1]
-   set mn [string range $utime 2 3]
-   playTime $hr $mn
-   playSilence 100
-   playMsg "utc"
-   playSilence 200
+  # puts "utime: $utime"
+  set hr [string range $utime 0 1]
+  set mn [string range $utime 2 3]
+  playTime $hr $mn
+  playSilence 100
+  playMsg "utc"
+  playSilence 200
 }
 
-# vv100 -> "vertical view (ceiling) 1000 feet" (не проверено)
+# vv100 -> "vertical view (ceiling) 1000 feet"
 proc ceiling {param} {
-   puts "ceiling: $param"
-   playMsg "ca"
-   playSilence 100
-   playNumberRu $param "male"
-   playUnit $param "unit_feet"
-   playSilence 200
+  # puts "ceiling: $param"
+  playMsg "ca"
+  playSilence 100
+  playNumberRu $param "male"
+  playUnit $param "unit_feet"
+  playSilence 200
 }
 
-# QNH (не проверено)
+# QNH
 proc qnh {value} {
-  puts "qnh: $value"
+  # puts "qnh: $value"
   playMsg "qnh"
   playNumberRu $value "male"
   playUnit $value "unit_hPa"
   playSilence 200
 }
 
-# altimeter (не проверено)
+# altimeter
 proc altimeter {value} {
-  puts "altimeter: $value"
+  # puts "altimeter: $value"
   playMsg "altimeter"
   playSilence 100
   playNumberRu $value "male"
@@ -426,9 +387,9 @@ proc altimeter {value} {
 
 # trend
 
-# clouds with arguments (не проверено)
+# clouds with arguments
 proc clouds {obs height {cbs ""}} {
-  puts "clouds: $obs $height $cbs"
+  # puts "clouds: $obs $height $cbs"
   playMsg $obs
   playSilence 100
   playNumberRu $height "male"
@@ -442,9 +403,9 @@ proc clouds {obs height {cbs ""}} {
 # temporary weather obscuration
 
 
-# max day temperature (не проверено)
+# max day temperature
 proc max_daytemp {deg time} {
-  puts "max_daytemp: $deg $time"
+  # puts "max_daytemp: $deg $time"
   playMsg "predicted"
   playSilence 50
   playMsg "maximal"
@@ -453,7 +414,6 @@ proc max_daytemp {deg time} {
   playSilence 150
   playNumberRu $deg "male"
   playUnit $deg "unit_degree"
-  # speakNumber $deg "unit_degree"
   playSilence 150
   playMsg "at"
   playSilence 50
@@ -463,9 +423,9 @@ proc max_daytemp {deg time} {
   playSilence 200
 }
 
-# min day temperature (не проверено)
+# min day temperature
 proc min_daytemp {deg time} {
-  puts "min_daytemp: $deg $time"
+  # puts "min_daytemp: $deg $time"
   playMsg "predicted"
   playSilence 50
   playMsg "minimal"
@@ -484,24 +444,23 @@ proc min_daytemp {deg time} {
   playSilence 200
 }
 
-# Maximum temperature in RMK section (не проверено)
+# Maximum temperature in RMK section
 proc rmk_maxtemp {val} {
-  puts "rmk_maxtemp: $val"
+  # puts "rmk_maxtemp: $val"
   playMsg "maximal"
   playMsg "temperature"
   playMsg "last"
   playNumberRu 6 "male"
   playUnit 6 "hour"
-
   playSilence 50
   playNumberRu $val "male"
   playUnit $val "unit_degree"
   playSilence 200
 }
 
-# Minimum temperature in RMK section (не проверено)
+# Minimum temperature in RMK section
 proc rmk_mintemp {val} {
-  puts "rmk_mintemp: $val"
+  # puts "rmk_mintemp: $val"
   playMsg "minimal"
   playMsg "temperature"
   playMsg "last"
@@ -516,99 +475,43 @@ proc rmk_mintemp {val} {
 # the begin of RMK section
 
 
-# RMK section pressure trend next 3 h (не проверено)
+# RMK section pressure trend next 3 h
 proc rmk_pressure {val args} {
-  puts "rmk_pressure: val=$val args=$args"
+  # puts "rmk_pressure: val=$val args=$args"
   playMsg "pressure"
   playMsg "tendency"
   playMsg "next"
   playNumberRu 3 "male"
   playUnit 3 "hour"
   playSilence 50
-
   playNumberRu $val "male"
   playUnit $val "unit_mb"
-  playSilence 200
-  
-  set i 0
-    while {$i < [llength $args]} {
-        set item [lindex $args $i]
-        # Проверяем является ли текущий элемент числовым значением
-        if {[regexp {\d+} $item]} {
-            # Обрабатываем как значение
-            set val $item
-            incr i
-            
-            # Проверяем наличие единицы измерения следом
-            if {$i < [llength $args]} {
-                set unit [lindex $args $i]
-                set gender [getGender $unit]
-                playNumberRu $val $gender
-                playUnit $val $unit
-                incr i
-            } else {
-                # Если единицы нет - используем male и не вызываем playUnit
-                playNumberRu $val "male"
-            }
-        } else {
-            # Обработка нечисловых значений как простых сообщений
-            playMsg $item
-            incr i
-        }
-    }
-  playSilence 200
+  playSilence 200 
+  handleMultiplyReports $args ""
 }
 
-# precipitation last hours in RMK section (не проверено)
+# precipitation last hours in RMK section
 proc rmk_precipitation {hour val} {
-  puts "rmk_precipitation: $hour $val"
+  # puts "rmk_precipitation: $hour $val"
   playMsg "precipitation"
   playMsg "last"
   playNumberRu $hour "male"
-  playUnit $hour "hour"
-  
+  playUnit $hour "hour" 
   playSilence 50
   playNumberRu $val "male"
   playUnit $val "unit_inch"
-  # speakNumber $val "unit_inch"
   playSilence 200
 }
 
-# precipitations in RMK section (не проверено)
+# precipitations in RMK section
 proc rmk_precip {args} {
-  puts "rmk_precip: $args"
-  set i 0
-    while {$i < [llength $args]} {
-        set item [lindex $args $i]
-        # Проверяем является ли текущий элемент числовым значением
-        if {[regexp {\d+} $item]} {
-            # Обрабатываем как значение
-            set val $item
-            incr i
-            
-            # Проверяем наличие единицы измерения следом
-            if {$i < [llength $args]} {
-                set unit [lindex $args $i]
-                set gender [getGender $unit]
-                playNumberRu $val $gender
-                playUnit $val $unit
-                incr i
-            } else {
-                # Если единицы нет - используем male и не вызываем playUnit
-                playNumberRu $val "male"
-            }
-        } else {
-            # Обработка нечисловых значений как простых сообщений
-            playMsg $item
-            incr i
-        }
-    }
-  playSilence 200
+  # puts "rmk_precip: $args"
+  handleMultiplyReports $args ""
 }
 
-# daytime minimal/maximal temperature (не проверено)
+# daytime minimal/maximal temperature
 proc rmk_minmaxtemp {max min} {
-  puts "rmk_precipitation: $max $min"
+  # puts "rmk_precipitation: $max $min"
   playMsg "daytime"
   playMsg "temperature"
   playMsg "maximum"
@@ -618,7 +521,6 @@ proc rmk_minmaxtemp {max min} {
   }
   playNumberRu $min "male"
   playUnit $min "unit_degree"
-  # speakNumber $min "unit_degree"
   
   playMsg "minimum"
   if { $max < 0} {
@@ -627,7 +529,6 @@ proc rmk_minmaxtemp {max min} {
   }
   playNumberRu $max "male"
   playUnit $max "unit_degree"
-  # speakNumber $max "unit_degree"
   playSilence 200
 }
 
@@ -637,13 +538,11 @@ proc rmk_tempdew {temp dewpt} {
   playMsg "temperature"
   playNumberRu $temp "male"
   playUnit $temp "unit_degree"
-  # speakNumber $temp "unit_degree"
   playSilence 200
   
   playMsg "dewpoint"
   playNumberRu $dewpt "male"
   playUnit $dewpt "unit_degree"
-  # speakNumber $dewpt "unit_degree"
   playSilence 200
 }
 
@@ -658,54 +557,20 @@ proc windshift {val} {
 }
 
 
-# QFE value (не проверено)
+# QFE value
 proc qfe {val} {
-  puts "qfe: $val"
   playMsg "qfe"
   playNumberRu $val "male"
   playUnit $val "unit_hPa"
-  # speakNumber $val "unit_hPa"
   playSilence 200
 }
 
 
-# runwaystate (проверено)
+# runwaystate
 # runway 24 left wet_or_water_patches contamination 51 to 100 percent deposit_depth 1 unit_mms friction_coefficient 0.36
-# ЗНАЧЕНИЕ УЖЕ С СКЛОНЕНИЕМ ВО МНОЖЕСТВЕННОМ ЧИСЛЕ!!!
 proc runwaystate args {
-  puts "runwaystate: $args"
-  set i 0
-    while {$i < [llength $args]} {
-        set item [lindex $args $i]
-        if {[regexp {\d+} $item]} {
-            # Обработка числового значения
-            set val $item
-            incr i
-            
-            if {$i < [llength $args]} {
-                set unit [lindex $args $i]
-                set gender [getGender $unit]
-                playNumberRu $val $gender
-                
-                # Проверяем префикс unit_
-                if {[string match "unit_*" $unit]} {
-                    # ЗНАЧЕНИЕ УЖЕ С СКЛОНЕНИЕМ ВО МНОЖЕСТВЕННОМ ЧИСЛЕ!!! ИСПРАВИТЬ!!!!
-                    playUnit 1 $unit
-                } else {
-                    playMsg $unit ;# Вызываем playMsg для слов
-                }
-                incr i
-            } else {
-                playNumberRu $val "male"
-            }
-        } else {
-            # Обработка нечисловых значений
-            playMsg $item
-            incr i
-        }
-    }
-    playSilence 200
-
+  # puts "runwaystate: $args"
+  handleMultiplyReports $args ""
 }
 
 
