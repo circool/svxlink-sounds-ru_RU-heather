@@ -35,21 +35,21 @@ proc getGender { unit } {
 
 
 # no airport defined
-proc _no_airport_defined {} {
+proc no_airport_defined {} {
    playMsg "no_airport_defined";
    playSilence 200;
 }
 
 
 # no such airport
-proc _no_such_airport {} {
+proc no_such_airport {} {
   playMsg "no_such_airport";
   playSilence 200;
 }
 
 
 # METAR not valid
-proc _metar_not_valid {} {
+proc metar_not_valid {} {
   playMsg "metar_not_valid";
   playSilence 200;
 }
@@ -66,22 +66,52 @@ proc metreport_time item {
 }
 
 
-# visibility / Видимость 5 километров 900 метров  (не проверено)
+# visibility / Видимость 5 километров 900 метров  (более чем ... )
 # !!! тут разобраться, 
 # значения состоят из нескольких аргументов, цифровые и буквенные
 # например 5 units_kms 500 units_ms
+# ЗНАЧЕНИЕ УЖЕ С СКЛОНЕНИЕМ ВО МНОЖЕСТВЕННОМ ЧИСЛЕ!!!
 proc visibility args {
   puts "visibility: $args"
   playMsg "visibility";
-  foreach item $args {
-    if [regexp {(\d+)} $item] {
-         playNumberRu $item "male";
-    } else {
-      playMsg $item;
-    }   
-    playSilence 100;
-  }
-  playSilence 200;
+  # foreach item $args {
+  #   if [regexp {(\d+)} $item] {
+  #        playNumberRu $item "male";
+  #   } else {
+  #     playMsg $item;
+  #   }   
+  #   playSilence 100;
+  # }
+  # playSilence 200;
+  set i 0
+    while {$i < [llength $args]} {
+        set item [lindex $args $i]
+        if {[regexp {\d+} $item]} {
+            # Обработка числового значения
+            set val $item
+            incr i
+            
+            if {$i < [llength $args]} {
+                set unit [lindex $args $i]
+                set gender [getGender $unit]
+                playNumberRu $val $gender
+                
+                # Проверяем префикс unit_
+                if {[string match "unit_*" $unit]} {
+                    playUnit $val $unit
+                } else {
+                    playMsg $unit ;# Вызываем playMsg для слов
+                }
+                incr i
+            } else {
+                playNumberRu $val "male"
+            }
+        } else {
+            # Обработка нечисловых значений
+            playMsg $item
+            incr i
+        }
+    }
 }
 
 
@@ -641,6 +671,7 @@ proc qfe {val} {
 
 # runwaystate (проверено)
 # runway 24 left wet_or_water_patches contamination 51 to 100 percent deposit_depth 1 unit_mms friction_coefficient 0.36
+# ЗНАЧЕНИЕ УЖЕ С СКЛОНЕНИЕМ ВО МНОЖЕСТВЕННОМ ЧИСЛЕ!!!
 proc runwaystate args {
   puts "runwaystate: $args"
   set i 0
@@ -658,7 +689,8 @@ proc runwaystate args {
                 
                 # Проверяем префикс unit_
                 if {[string match "unit_*" $unit]} {
-                    playUnit $val $unit
+                    # ЗНАЧЕНИЕ УЖЕ С СКЛОНЕНИЕМ ВО МНОЖЕСТВЕННОМ ЧИСЛЕ!!! ИСПРАВИТЬ!!!!
+                    playUnit 1 $unit
                 } else {
                     playMsg $unit ;# Вызываем playMsg для слов
                 }
