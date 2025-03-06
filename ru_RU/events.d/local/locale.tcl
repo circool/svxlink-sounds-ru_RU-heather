@@ -32,92 +32,24 @@ proc playTime {hour minute} {
 		}
 	}
 
-	# Убираем ведущий ноль для часов
-	set hour [expr {$hour + 0}]
-
-	# Обработка часов
-	if {$hour == 0} {
-		playMsg "Default" "0"
-		playMsg "Default" "hours"
-	} elseif {$hour == 1 || $hour == 21} {
-		# Для 1 и 21 часа используем "hour"
-		if {$hour == 21} {
-			playMsg "Default" "2X"
-			playMsg "Default" "1"
-		} else {
-			playMsg "Default" $hour
-		}
-		playMsg "Default" "hour"  ;# 1 час, 21 час
-	} elseif {($hour >= 2 && $hour <= 4) || ($hour >= 22 && $hour <= 24)} {
-		# Для часов от 20 и выше, если число не кратно 10, разбиваем на десятки и единицы
-		if {$hour >= 20 && $hour % 10 != 0} {
-			set hourTens [expr {$hour / 10}]
-			set hourUnits [expr {$hour % 10}]
-			playMsg "Default" "${hourTens}X"
-			if {$hourUnits > 0} {
-				playMsg "Default" "$hourUnits"
-			}
-		} else {
-			playMsg "Default" $hour
-		}
-		playMsg "Default" "hour1"  ;# 2-4 часа, 22-24 часа
-	} elseif {$hour >= 5 && $hour <= 20} {
-		playMsg "Default" $hour
-		playMsg "Default" "hours"  ;# 5-20 часов
-	} else {
-		playMsg "Default" $hour
-		playMsg "Default" "hours"
-	}
+	playNumberRu $hour "male"
+	playUnit "Default" $hour "hour" 
+	playSilence 100
 
 	# Обработка минут
 	if {$minute == 0} {
 		playMsg "Default" "equal"
 	} else {
-		# Убираем ведущий ноль для минут
-		set minute [expr {$minute + 0}]
-
-		if {$minute < 20} {
-			# Для чисел от 0 до 19 используем одностроковое значение
-			if {$minute == 1 || $minute == 2} {
-				playMsg "Default" "${minute}f"
-			} else {
-				playMsg "Default" $minute
-			}
-		} elseif {$minute % 10 == 0} {
-			# Если минуты кратны 10, используем одностроковое значение
-			playMsg "Default" $minute
-		} else {
-			set minuteTens [expr {$minute / 10}]
-			set minuteUnits [expr {$minute % 10}]
-			if {$minuteTens > 0} {
-				playMsg "Default" "${minuteTens}X"
-			}
-			if {$minuteUnits > 0} {
-				# Для минут 1, 2, 21, 22, 31, 32 и т.д. добавляем "f"
-				if {$minuteUnits == 1 || $minuteUnits == 2} {
-					playMsg "Default" "${minuteUnits}f"
-				} else {
-					playMsg "Default" "$minuteUnits"
-				}
-			}
-		}
-
-		# Склонение слова "минута" в зависимости от значения минут
-		if {$minute % 10 == 1 && $minute != 11} {
-			playMsg "Default" "minute"  ;# 1 минута, 21 минута, 31 минута и т.д.
-		} elseif {($minute % 10 >= 2 && $minute % 10 <= 4) && ($minute < 10 || $minute > 20)} {
-			playMsg "Default" "minute1"  ;# 2-4 минуты, 22-24 минуты и т.д.
-		} else {
-			playMsg "Default" "minutes"  ;# 5-19, 20, 25-29, ..., 59 минут
-		}
+		playNumberRu $minute "male"
+		playUnit "Default" $minute "minute" 
 	}
 
 	# Добавление am/pm для 12-часового формата
 	if {$CFG_TIME_FORMAT == 12} {
 		playMsg "Core" "$ampm"
 	}
+	playSilence 100
 }
-
 
 # Блок playNumber
 # Воспроизведение чисел в соответствием с правилами произношения цифр в русском языке.
@@ -240,31 +172,31 @@ proc GetThousandForm { number } {
 		$lastDigit == 1 ? "thousand" :
 		($lastDigit >= 2 && $lastDigit <= 4) ? "thousands" : "thousand1"
 		}]
-	}
-	# /блок playNumber
+}
+# /блок playNumber
 
-	# Произношение формы единицы измерения (градус/градуса|метр/метра)
-	# Используется в модулях MetarInfo, EchoLink
-	# Звуковые файлы уже учитвают род единицы измерения, так что нам остается только понять, это единственная или множественная форма
-	proc playUnit {modulename value unit} {
-		# Проверяем, есть ли дробная часть (для дробный частей используем форму от слова "целая/целых" - одна целая | семь целых)
-		if {[regexp {\.} $value]} {
+# Произношение формы единицы измерения (градус/градуса|метр/метра)
+# Используется в модулях MetarInfo, EchoLink
+# Звуковые файлы уже учитвают род единицы измерения, так что нам остается только понять, это единственная или множественная форма
+proc playUnit {modulename value unit} {
+	# Проверяем, есть ли дробная часть (для дробный частей используем форму от слова "целая/целых" - одна целая | семь целых)
+	if {[regexp {\.} $value]} {
+		set unit "${unit}1"
+	} else {
+		# Получаем последнюю цифру числа
+		set lastDigit [string index $value end]
+
+		# Определяем правильную форму единицы измерения
+		if {$lastDigit == 1} {
+			# градус, минута
+			set unit "${unit}"
+		} elseif {$lastDigit == 2 || $lastDigit == 3 || $lastDigit == 4} {
+			# градуса, минуты
 			set unit "${unit}1"
 		} else {
-			# Получаем последнюю цифру числа
-			set lastDigit [string index $value end]
-
-			# Определяем правильную форму единицы измерения
-			if {$lastDigit == 1} {
-				# градус, минута
-				set unit "${unit}"
-			} elseif {$lastDigit == 2 || $lastDigit == 3 || $lastDigit == 4} {
-				# градуса, минуты
-				set unit "${unit}1"
-			} else {
-				# градусов, минут
-				set unit "${unit}s"
-			}
+			# градусов, минут
+			set unit "${unit}s"
 		}
-		playMsg $modulename $unit
 	}
+	playMsg $modulename $unit
+}
