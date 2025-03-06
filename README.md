@@ -3,6 +3,8 @@ Russian Language Pack for SvxLink Server
 
 fork https://github.com/sm0svx/svxlink-sounds-en_US-heather
 
+__Бранч для разработчиков__
+
 Русский языковой пакет для сервера SVXLINK
 ==========================================
 
@@ -13,6 +15,8 @@ fork https://github.com/sm0svx/svxlink-sounds-en_US-heather
 В файле https://github.com/circool/svxlink-sounds-ru_RU-milana/blob/master/TODO.md изложен план действий.
 
 В файле https://github.com/circool/svxlink-sounds-ru_RU-milana/blob/master/INSTALL.md описан процесс установки.
+
+В файле https://github.com/circool/svxlink-sounds-ru_RU-milana/blob/dev/RULES.md описаны правила именования аудиофайлов
 
 Дополнение
 ----------
