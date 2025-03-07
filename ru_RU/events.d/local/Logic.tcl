@@ -73,11 +73,11 @@ namespace eval Logic {
 				}
 			}
 		}
-
+		
+		playSilence 400;
 		foreach module [split $loaded_modules " "] {
 			if { $module ==  "Help"} {
 				playMsg "Default" "press_0_for_help"
-				playSilence 250;
 			}
 		}
 	}
