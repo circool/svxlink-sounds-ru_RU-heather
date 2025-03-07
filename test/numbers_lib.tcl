@@ -61,8 +61,20 @@ proc playNumberBlock { number gender } {
 
 # Процедура для добавления единицы измерения
 proc playUnit {modulename value unit} {
+	# Remove leading zeros to avoid octal interpretation
+	set value [string trimleft $value "0"]
+	if {$value eq ""} {
+		set value 0
+	}
+
+	# Ensure value is a valid integer after removing leading zeros
+	if {![string is integer -strict $value]} {
+		error "Invalid value: $value is not an integer"
+	}
+
 	set lastDigit [expr {$value % 10}]
 	set lastTwo [expr {$value % 100}]
+
 	# Определение правильной формы единицы измерения
 	if {$lastTwo >= 11 && $lastTwo <= 14} {
 		# Для чисел 11-14 используется форма множественного числа
@@ -74,13 +86,16 @@ proc playUnit {modulename value unit} {
 			default { set unit "${unit}s" }
 		}
 	}
+
 	# Воспроизведение единицы измерения
 	playMsg $modulename $unit
 }
 
-
 # Процедура для воспроизведения числа на русском языке
 proc playNumberRu { value gender } {
+	# Преобразование строки в число чтобы не получить восьмеричные числа 
+	set value [scan $value %d]
+
 	# Обработка отрицательных чисел
 	set isNegative [expr {$value < 0}]
 	if {$isNegative} {
@@ -118,10 +133,8 @@ proc playNumberRu { value gender } {
 		}
 	}
 
-
 	# Обработка дробной части
 	if {$hasFraction} {
-
 		# Для дробных чисел с нулевой целой частью
 		if {$integerPart == 0} {
 			playMsg "Default" "0"
@@ -143,7 +156,6 @@ proc playNumberRu { value gender } {
 			playUnit "Default" $fractionalNum "hundredth"
 		}
 	}
-
 }
 
 
