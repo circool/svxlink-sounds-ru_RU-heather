@@ -23,6 +23,11 @@ __Бранч для разработчиков__
 
 В файле https://github.com/circool/svxlink-sounds-ru_RU-milana/blob/dev/RULES.md описаны правила именования аудиофайлов
 
+В каталоге https://github.com/circool/svxlink-sounds-ru_RU-milana/blob/dev/test находятся утилиты для тестирования
+
+В каталоге https://github.com/circool/svxlink-sounds-ru_RU-milana/blob/dev/test/utils находятся вспомогательные утилиты
+
+
 Дополнение
 ----------
 
