@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="https://img.shields.io/badge/GiHub-Thinks-brightgreen?style=for-the-badge&logo=github" alt="Thinks">
+  <img src="https://img.shields.io/badge/chapter-Thinks-brightgreen?style=flat&logo=github" alt="Thinks">
 </p>
 
 # Правила формирования имен файлов звуковых фрагментов
