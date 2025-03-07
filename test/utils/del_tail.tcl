@@ -36,7 +36,7 @@ proc correctFile {filePath} {
 
 # Основной код программы
 if {[llength $argv] < 1} {
-	puts "Использование: correct.tcl \[-r\] <имя_каталога>"
+	puts "Использование: del_tail.tcl \[-r\] <имя_каталога>"
 	exit 1
 }
 
