@@ -1,3 +1,8 @@
+![Статус проекта](https://img.shields.io/badge/Статус-Активный-brightgreen?style=flat)
+![Версия](https://img.shields.io/badge/Версия-1.4.2-blue?style=flat)
+![Лицензия](https://img.shields.io/badge/Лицензия-MIT-green?style=flat)
+
+
 # svxlink-sounds-ru_RU-milana
 Russian Language Pack for SvxLink Server
 
