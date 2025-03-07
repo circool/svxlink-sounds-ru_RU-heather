@@ -2,22 +2,11 @@
 # aka circool
 # aka R2ADU
 
-
-# Руский синтаксис для воспроизведения времени
+# Время
 proc playTime {hour minute} {
 	variable Logic::CFG_TIME_FORMAT
-
-	# Проверка корректности формата времени
-	if {$hour < 0 || $hour > 24 } {
-		puts "*** WARNING: Function playTime received invlalid argument hour: $hour (0-$CFG_TIME_FORMAT)"
-		return
-	}
-	if {$minute < 0 || $minute > 59  } {
-		puts "*** WARNING: Function playTime received invlalid argument minute: $minute. Must be 0 до 59"
-		return
-	}
-
-	# Корректировка часа для 12-часового формата
+	
+	# Установить формат часа и время суток для 12-часового формата
 	if {$CFG_TIME_FORMAT == 12} {
 		if {$hour == 0} {
 			set hour 12
@@ -32,28 +21,41 @@ proc playTime {hour minute} {
 		}
 	}
 
-	playNumberRu $hour "male"
-	playUnit "Default" $hour "hour" 
-	playSilence 100
-
-	# Обработка минут
-	if {$minute == 0} {
-		playMsg "Default" "equal"
+	playNumberRu $hour "male";
+	playUnit "Default" $hour "hour";
+	if {$minute != 0} {
+		playNumberRu $minute "female";
+		playUnit "Default" $minute "minute";
 	} else {
-		playNumberRu $minute "male"
-		playUnit "Default" $minute "minute" 
+		playMsg "equal"
 	}
-
+	
 	# Добавление am/pm для 12-часового формата
 	if {$CFG_TIME_FORMAT == 12} {
 		playMsg "Core" "$ampm"
 	}
-	playSilence 100
 }
 
-# Блок playNumber
-# Воспроизведение чисел в соответствием с правилами произношения цифр в русском языке.
+
+# Обработка количественной формы в диапазоне-999999.99 ... 999999.99 (0  1, 5, 120, 1556, -12, 123001.12)
 proc playNumberRu { value gender } {
+	# Debug: Print input value and gender
+	# puts "DEBUG: Input value = $value, gender = $gender"
+
+	# Если значение начинается с 0, обрабатываем его как строку
+	if {[string index $value 0] eq "0"} {
+		# Убираем ведущие нули, кроме последнего, если значение равно 0
+		set value [string trimleft $value "0"]
+		if {$value eq ""} {
+			set value 0 ;# Если все символы были нулями, устанавливаем значение 0
+		}
+	}
+
+	# Преобразуем значение в число (целое или дробное)
+	set value [expr {double($value)}]
+
+	# Debug: Print processed value
+	# puts "DEBUG: Processed value = $value"
 
 	# Обработка отрицательных чисел
 	set isNegative [expr {$value < 0}]
@@ -74,6 +76,9 @@ proc playNumberRu { value gender } {
 	set fractionalPart [string trimright [format "%02d" $fractionalPart] "0"]
 	set hasFraction [expr {[string length $fractionalPart] > 0}]
 
+	# Debug: Print integerPart and fractionalPart
+	# puts "DEBUG: integerPart = $integerPart, fractionalPart = $fractionalPart"
+
 	# Обработка целой части
 	if {$integerPart != 0 || $hasFraction} {
 		# Если целая часть нулевая, но есть дробная, добавляем "0 целых"
@@ -86,6 +91,8 @@ proc playNumberRu { value gender } {
 			set remainder [expr {$integerPart % 1000}]
 
 			if {$thousands > 0} {
+				# Debug: Print thousands and remainder
+				# puts "DEBUG: thousands = $thousands, remainder = $remainder"
 				playNumberBlock $thousands "female" 1
 				playMsg "Default" [GetThousandForm $thousands]
 				set integerPart $remainder
@@ -93,6 +100,8 @@ proc playNumberRu { value gender } {
 
 			# Обработка остатка
 			if {$integerPart != 0} {
+				# Debug: Print integerPart and gender before calling playNumberBlock
+				# puts "DEBUG: Calling playNumberBlock with integerPart = $integerPart, gender = $gender, isThousand = 0"
 				playNumberBlock $integerPart $gender 0
 			}
 
@@ -127,8 +136,7 @@ proc playNumberRu { value gender } {
 		playMsg "Default" $suffix
 	}
 }
-
-# Вспомогательная процедура для обработки чисел в диапазоне 0-999
+# Это лучше исключить
 proc playNumberBlock { number gender isThousand } {
 	set num [expr {int($number)}]
 	set values {900 800 700 600 500 400 300 200 100 90 80 70 60 50 40 30 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1}
@@ -161,7 +169,7 @@ proc playNumberBlock { number gender isThousand } {
 		}
 	}
 }
-# Вспомогательная процедура для определения формы слова ТЫСЯЧА
+# Это лучше исключить
 proc GetThousandForm { number } {
 	set lastTwo [expr {$number % 100}]
 	if {$lastTwo >= 11 && $lastTwo <= 14} {
@@ -171,13 +179,11 @@ proc GetThousandForm { number } {
 	return [expr {
 		$lastDigit == 1 ? "thousand" :
 		($lastDigit >= 2 && $lastDigit <= 4) ? "thousands" : "thousand1"
-		}]
+	}]
 }
-# /блок playNumber
+		
 
-# Произношение формы единицы измерения (градус/градуса|метр/метра)
-# Используется в модулях MetarInfo, EchoLink
-# Звуковые файлы уже учитвают род единицы измерения, так что нам остается только понять, это единственная или множественная форма
+# Получение формы для количественно-именной конструкции (градус|градуса|градусов / метр|метра|метров / тысяча|тысяч|тысячи / целая|целые|целых )
 proc playUnit {modulename value unit} {
 	# Проверяем, есть ли дробная часть (для дробный частей используем форму от слова "целая/целых" - одна целая | семь целых)
 	if {[regexp {\.} $value]} {
