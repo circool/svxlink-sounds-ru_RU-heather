@@ -4,8 +4,8 @@
 
 # Время
 proc playTime {hour minute} {
-	variable Logic::CFG_TIME_FORMAT
 	
+	variable Logic::CFG_TIME_FORMAT
 	# Установить формат часа и время суток для 12-часового формата
 	if {$CFG_TIME_FORMAT == 12} {
 		if {$hour == 0} {
@@ -27,9 +27,9 @@ proc playTime {hour minute} {
 		playNumberRu $minute "female";
 		playUnit "Default" $minute "minute";
 	} else {
-		playMsg "equal"
+		playMsg "Default" "equal"
 	}
-	
+
 	# Добавление am/pm для 12-часового формата
 	if {$CFG_TIME_FORMAT == 12} {
 		playMsg "Core" "$ampm"
@@ -37,107 +37,8 @@ proc playTime {hour minute} {
 }
 
 
-# Обработка количественной формы в диапазоне-999999.99 ... 999999.99 (0  1, 5, 120, 1556, -12, 123001.12)
-proc playNumberRu { value gender } {
-	# Debug: Print input value and gender
-	# puts "DEBUG: Input value = $value, gender = $gender"
-
-	# Если значение начинается с 0, обрабатываем его как строку
-	if {[string index $value 0] eq "0"} {
-		# Убираем ведущие нули, кроме последнего, если значение равно 0
-		set value [string trimleft $value "0"]
-		if {$value eq ""} {
-			set value 0 ;# Если все символы были нулями, устанавливаем значение 0
-		}
-	}
-
-	# Преобразуем значение в число (целое или дробное)
-	set value [expr {double($value)}]
-
-	# Debug: Print processed value
-	# puts "DEBUG: Processed value = $value"
-
-	# Обработка отрицательных чисел
-	set isNegative [expr {$value < 0}]
-	if {$isNegative} {
-		playMsg "Default" "minus"
-	}
-	set absValue [expr {abs($value)}]
-
-	# Проверка на ноль (включая 0.0, -0, -0.0)
-	if {$absValue == 0} {
-		playMsg "Default" "0"
-		return ;# Прекращаем выполнение
-	}
-
-	# Разделение на целую и дробную части
-	set integerPart [expr {int($absValue)}]
-	set fractionalPart [expr {round(($absValue - $integerPart) * 100)}]
-	set fractionalPart [string trimright [format "%02d" $fractionalPart] "0"]
-	set hasFraction [expr {[string length $fractionalPart] > 0}]
-
-	# Debug: Print integerPart and fractionalPart
-	# puts "DEBUG: integerPart = $integerPart, fractionalPart = $fractionalPart"
-
-	# Обработка целой части
-	if {$integerPart != 0 || $hasFraction} {
-		# Если целая часть нулевая, но есть дробная, добавляем "0 целых"
-		if {$integerPart == 0 && $hasFraction} {
-			playMsg "Default" "0"
-			playMsg "Default" "integers"
-		} else {
-			# Тысячи
-			set thousands [expr {$integerPart / 1000}]
-			set remainder [expr {$integerPart % 1000}]
-
-			if {$thousands > 0} {
-				# Debug: Print thousands and remainder
-				# puts "DEBUG: thousands = $thousands, remainder = $remainder"
-				playNumberBlock $thousands "female" 1
-				playMsg "Default" [GetThousandForm $thousands]
-				set integerPart $remainder
-			}
-
-			# Обработка остатка
-			if {$integerPart != 0} {
-				# Debug: Print integerPart and gender before calling playNumberBlock
-				# puts "DEBUG: Calling playNumberBlock with integerPart = $integerPart, gender = $gender, isThousand = 0"
-				playNumberBlock $integerPart $gender 0
-			}
-
-			# Добавление "целая/целых"
-			if {$hasFraction} {
-				set lastTwo [expr {$integerPart % 100}]
-				if {$lastTwo >= 11 && $lastTwo <= 14} {
-					set suffix "integers"
-				} else {
-					set lastDigit [expr {$integerPart % 10}]
-					set suffix [expr {$lastDigit == 1 ? "integer" : "integers"}]
-				}
-				playMsg "Default" $suffix
-			}
-		}
-	}
-
-	# Дробная часть
-	if {$hasFraction} {
-		playMsg "Default" "and"
-		set fractionalNum [scan $fractionalPart "%d"]
-		playNumberBlock $fractionalNum $gender 0
-
-		# Определение суффикса
-		set fractionalLen [string length $fractionalPart]
-		set lastTwoFrac [expr {$fractionalNum % 100}]
-		if {$fractionalLen == 1} {
-			set suffix [expr {$lastTwoFrac == 1 ? "tenth" : "tenths"}]
-		} else {
-			set suffix [expr {$lastTwoFrac == 1 ? "hundredth" : "hundredths"}]
-		}
-		playMsg "Default" $suffix
-	}
-}
-# Это лучше исключить
-proc playNumberBlock { number gender isThousand } {
+# Процедура для обработки числа (0-999)
+proc playNumberBlock { number gender } {
 	set num [expr {int($number)}]
 	set values {900 800 700 600 500 400 300 200 100 90 80 70 60 50 40 30 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1}
 
@@ -169,40 +70,91 @@ proc playNumberBlock { number gender isThousand } {
 		}
 	}
 }
-# Это лучше исключить
-proc GetThousandForm { number } {
-	set lastTwo [expr {$number % 100}]
-	if {$lastTwo >= 11 && $lastTwo <= 14} {
-		return "thousand1"
-	}
-	set lastDigit [expr {$number % 10}]
-	return [expr {
-		$lastDigit == 1 ? "thousand" :
-		($lastDigit >= 2 && $lastDigit <= 4) ? "thousands" : "thousand1"
-	}]
-}
-		
 
-# Получение формы для количественно-именной конструкции (градус|градуса|градусов / метр|метра|метров / тысяча|тысяч|тысячи / целая|целые|целых )
+
+# Процедура для добавления единицы измерения
 proc playUnit {modulename value unit} {
-	# Проверяем, есть ли дробная часть (для дробный частей используем форму от слова "целая/целых" - одна целая | семь целых)
-	if {[regexp {\.} $value]} {
-		set unit "${unit}1"
+	set lastDigit [expr {$value % 10}]
+	set lastTwo [expr {$value % 100}]
+	# Определение правильной формы единицы измерения
+	if {$lastTwo >= 11 && $lastTwo <= 14} {
+		# Для чисел 11-14 используется форма множественного числа
+		set unit "${unit}s"
 	} else {
-		# Получаем последнюю цифру числа
-		set lastDigit [string index $value end]
-
-		# Определяем правильную форму единицы измерения
-		if {$lastDigit == 1} {
-			# градус, минута
-			set unit "${unit}"
-		} elseif {$lastDigit == 2 || $lastDigit == 3 || $lastDigit == 4} {
-			# градуса, минуты
-			set unit "${unit}1"
-		} else {
-			# градусов, минут
-			set unit "${unit}s"
+		switch -- $lastDigit {
+			1 { set unit "${unit}" }
+			2 - 3 - 4 { set unit "${unit}1" }
+			default { set unit "${unit}s" }
 		}
 	}
+	# Воспроизведение единицы измерения
 	playMsg $modulename $unit
+}
+
+
+# Процедура для воспроизведения числа на русском языке
+proc playNumberRu { value gender } {
+	# Обработка отрицательных чисел
+	set isNegative [expr {$value < 0}]
+	if {$isNegative} {
+		playMsg "Default" "minus"
+	}
+	set absValue [expr {abs($value)}]
+
+	# Проверка на ноль
+	if {$absValue == 0} {
+		playMsg "Default" "0"
+		return
+	}
+
+	# Разделение на целую и дробную части
+	set integerPart [expr {int($absValue)}]
+	set fractionalPart [expr {round(($absValue - $integerPart) * 100)}]
+	set fractionalPart [string trimright [format "%02d" $fractionalPart] "0"]
+	set hasFraction [expr {[string length $fractionalPart] > 0}]
+
+	# Разделение целой части на тысячи и единицы
+	set thousands [expr {$integerPart / 1000}]
+	set units [expr {$integerPart % 1000}]
+
+	# Обработка тысяч
+	if {$thousands > 0} {
+		playNumberBlock $thousands "female"
+		playUnit "Default" $thousands "thousand"
+	}
+
+	# Обработка единиц
+	if {$units > 0 || ($thousands == 0 && !$hasFraction)} {
+		playNumberBlock $units $gender
+		if {$hasFraction} {
+			playUnit "Default" $units "integer"
+		}
+	}
+
+
+	# Обработка дробной части
+	if {$hasFraction} {
+
+		# Для дробных чисел с нулевой целой частью
+		if {$integerPart == 0} {
+			playMsg "Default" "0"
+			playUnit "Default" $integerPart "integer"
+		}
+
+		playMsg "Default" "and"
+		set fractionalNum [scan $fractionalPart "%d"]
+		set lastDigit [expr {$fractionalNum % 10}]
+		if {$lastDigit == 1 || $lastDigit == 2} {
+			playNumberBlock $fractionalNum "female"
+		} else {
+			playNumberBlock $fractionalNum $gender
+		}
+
+		if {[string length $fractionalPart] == 1} {
+			playUnit "Default" $fractionalNum "tenth"
+		} else {
+			playUnit "Default" $fractionalNum "hundredth"
+		}
+	}
+
 }

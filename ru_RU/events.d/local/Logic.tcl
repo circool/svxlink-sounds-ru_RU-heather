@@ -8,12 +8,14 @@ namespace eval Logic {
 
 	# Начальный запуск программы
 	proc startup {} {
+		global mycall;
 		# Подготовить переменные для ананса текущего времени
 		set current_time [clock seconds]
 		set hour [clock format $current_time -format "%H"]
 		set minute [clock format $current_time -format "%M"]
 		# Сообщить что программа запущена, передать короткий анонс и сообщить текущее время
-		playMsg "Core" "online"
+		playMsg "Core" "online_short"
+		spellWord $mycall
 		send_short_ident
 		playSilence 250;
 		playMsg "Core" "the_time_is";
@@ -35,7 +37,7 @@ namespace eval Logic {
 		regexp {([1-5]?\d)$} [clock format $epoch -format "%M"] -> minute;
 		set prev_ident $epoch;
 
-		playMsg "Core" "online";
+		playMsg "Core" "online_short";
 		spellWord $mycall;
 		if {$CFG_TYPE == "Repeater"} {
 			playMsg "Core" "repeater";
