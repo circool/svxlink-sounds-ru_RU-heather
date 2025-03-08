@@ -2,6 +2,7 @@
 ![Версия](https://img.shields.io/badge/Версия-1.4.2-blue?style=flat)
 ![Лицензия](https://img.shields.io/badge/Лицензия-MIT-green?style=flat)
 
+![Circool's GitHub stats](https://github-readme-stats.vercel.app/api?username=circool&show=reviews,discussions_started,discussions_answered,prs_merged,prs_merged_percentage)
 
 # svxlink-sounds-ru_RU-milana
 Russian Language Pack for SvxLink Server
