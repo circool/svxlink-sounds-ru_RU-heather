@@ -13,7 +13,7 @@ namespace eval Logic {
 		set current_time [clock seconds]
 		set hour [clock format $current_time -format "%H"]
 		set minute [clock format $current_time -format "%M"]
-		
+
 		# Сообщить что программа запущена, передать короткий анонс и сообщить текущее время
 		playMsg "Core" "online_short"
 		spellWord $mycall
@@ -26,7 +26,7 @@ namespace eval Logic {
 
 	# Ручная идентификация
 	proc manual_identification {} {
-		puts "manual_identification started";
+		puts "Запускается процедура ручной идентификации";
 		global mycall;
 		global report_ctcss;
 		global active_module;
