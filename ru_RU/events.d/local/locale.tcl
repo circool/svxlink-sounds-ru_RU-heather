@@ -62,8 +62,19 @@ proc playNumberBlock { number gender } {
 
 			# Стандартная обработка для остальных значений
 			set block $val
-			if {($val == 1 || $val == 2) && ($gender eq "female" || $gender eq "neuter")} {
-				append block [expr {$gender eq "female" ? "f" : "o"}]
+			# Обработка чисел 1 и 2 в зависимости от рода
+			if {$val == 1 || $val == 2} {
+				# Женский род: добавляем суффикс "f"
+				if {$gender eq "female"} {
+					append block "f"
+				}
+				# Средний род: добавляем суффикс "o" только для числа 1, исключая числа, оканчивающиеся на 11
+				if {$gender eq "neuter" && $val == 1} {
+					set lastTwoDigits [expr {$num % 100}]
+					if {$lastTwoDigits != 11} {
+						append block "o"
+					}
+				}
 			}
 			playMsg "Default" $block
 			set num [expr {$num - $val}]
@@ -74,19 +85,22 @@ proc playNumberBlock { number gender } {
 
 # Процедура для добавления единицы измерения
 proc playUnit {modulename value unit} {
-	# Удаление лидирующих нулей
+	# Удаляем ведущие нули, чтобы избежать интерпретации как восьмеричного числа
 	set value [string trimleft $value "0"]
 	if {$value eq ""} {
 		set value 0
 	}
 
-	# Убедится что получено целое число
-	if {![string is integer -strict $value]} {
-		error "Invalid value: $value is not an integer"
+	# Разрешаем как целые, так и дробные числа
+	if {![string is double -strict $value]} {
+		puts "***ERROR: Недопустимое значение: $value не является числом"
 	}
 
-	set lastDigit [expr {$value % 10}]
-	set lastTwo [expr {$value % 100}]
+	# Извлекаем целую часть для определения формы единицы измерения
+	set intValue [expr {int($value)}]
+
+	set lastDigit [expr {$intValue % 10}]
+	set lastTwo [expr {$intValue % 100}]
 
 	# Определение правильной формы единицы измерения
 	if {$lastTwo >= 11 && $lastTwo <= 14} {
@@ -105,50 +119,60 @@ proc playUnit {modulename value unit} {
 }
 
 
+
 # Процедура для воспроизведения числа на русском языке
 proc playNumberRu { value gender } {
-	# Преобразование строки в число чтобы не получить восьмеричные числа
-	set value [scan $value %d]
+	# Разделение числа на целую и дробную части
+	set parts [split $value "."]
+	set integerPart [lindex $parts 0]
+	set fractionalPart [lindex $parts 1]
+
+	# Преобразование целой части в число
+	set integerPart [scan $integerPart %d]
 
 	# Обработка отрицательных чисел
 	set isNegative [expr {$value < 0}]
 	if {$isNegative} {
 		playMsg "Default" "minus"
 	}
-	set absValue [expr {abs($value)}]
+	set absValue [expr {abs($integerPart)}]
 
 	# Проверка на ноль
-	if {$absValue == 0} {
+	if {$absValue == 0 && ($fractionalPart eq "" || $fractionalPart == 0)} {
 		playMsg "Default" "0"
 		return
 	}
 
-	# Разделение на целую и дробную части
-	set integerPart [expr {int($absValue)}]
-	set fractionalPart [expr {round(($absValue - $integerPart) * 100)}]
-	set fractionalPart [string trimright [format "%02d" $fractionalPart] "0"]
-	set hasFraction [expr {[string length $fractionalPart] > 0}]
-
 	# Разделение целой части на тысячи и единицы
-	set thousands [expr {$integerPart / 1000}]
-	set units [expr {$integerPart % 1000}]
+	set thousands [expr {$absValue / 1000}]
+	set units [expr {$absValue % 1000}]
 
 	# Обработка тысяч
 	if {$thousands > 0} {
-		playNumberBlock $thousands "female"
+		playNumberBlock $thousands "female"  
+		# Тысячи всегда женского рода
 		playUnit "Default" $thousands "thousand"
 	}
 
 	# Обработка единиц
-	if {$units > 0 || ($thousands == 0 && !$hasFraction)} {
-		playNumberBlock $units $gender
-		if {$hasFraction} {
-			playUnit "Default" $units "integer"
+	if {$units > 0 || ($thousands == 0 && ($fractionalPart eq "" || $fractionalPart == 0))} {
+		# Если есть дробная часть, род целой части должен быть женским
+		if {$fractionalPart ne "" && $fractionalPart != 0} {
+			playNumberBlock $units "female"  
+			# Женский род для целой части
+		} else {
+			playNumberBlock $units $gender  
+			# Общий род для целых чисел
+		}
+
+		if {$fractionalPart ne "" && $fractionalPart != 0} {
+			playUnit "Default" $units "integer"  
+			# "целых"
 		}
 	}
 
 	# Обработка дробной части
-	if {$hasFraction} {
+	if {$fractionalPart ne "" && $fractionalPart != 0} {
 		# Для дробных чисел с нулевой целой частью
 		if {$integerPart == 0} {
 			playMsg "Default" "0"
@@ -159,15 +183,20 @@ proc playNumberRu { value gender } {
 		set fractionalNum [scan $fractionalPart "%d"]
 		set lastDigit [expr {$fractionalNum % 10}]
 		if {$lastDigit == 1 || $lastDigit == 2} {
-			playNumberBlock $fractionalNum "female"
+			playNumberBlock $fractionalNum "female"  
+			# Женский род для дробной части
 		} else {
-			playNumberBlock $fractionalNum $gender
+			playNumberBlock $fractionalNum $gender  
+			# Общий род для дробной части
 		}
 
 		if {[string length $fractionalPart] == 1} {
-			playUnit "Default" $fractionalNum "tenth"
+			playUnit "Default" $fractionalNum "tenth"  
+			# "десятых"
 		} else {
-			playUnit "Default" $fractionalNum "hundredth"
+			playUnit "Default" $fractionalNum "hundredth"  
+			# "сотых"
 		}
 	}
 }
+

@@ -13,6 +13,7 @@ namespace eval Logic {
 		set current_time [clock seconds]
 		set hour [clock format $current_time -format "%H"]
 		set minute [clock format $current_time -format "%M"]
+		
 		# Сообщить что программа запущена, передать короткий анонс и сообщить текущее время
 		playMsg "Core" "online_short"
 		spellWord $mycall
@@ -25,6 +26,7 @@ namespace eval Logic {
 
 	# Ручная идентификация
 	proc manual_identification {} {
+		puts "manual_identification started";
 		global mycall;
 		global report_ctcss;
 		global active_module;
@@ -53,6 +55,8 @@ namespace eval Logic {
 			playFrequencyRu $report_ctcss
 			playSilence 300;
 		}
+		
+
 
 		if {$active_module != ""} {
 			playMsg "Core" "active_module";
@@ -83,6 +87,7 @@ namespace eval Logic {
 	}
 
 	proc playFrequencyRu {fq} {
+
 		if {$fq < 1000} {
 			set unit "Hz"
 		} elseif {$fq < 1000000} {
@@ -102,9 +107,15 @@ namespace eval Logic {
 		# Убираем лишние нули и точку
 		set trimmedFq [string trimright $formattedFq ".0"]
 
-		# Произносим число и единицу измерения пространство имен "Default"
+		# Проверка, что значение является числом
+		if {![string is double $trimmedFq]} {
+			error "Invalid value: $trimmedFq is not a number"
+		}
+
+		# Произносим число и единицу измерения
 		playNumberRu $trimmedFq "female"
 		playUnit "Default" $trimmedFq $unit
 	}
+	
 
 }
