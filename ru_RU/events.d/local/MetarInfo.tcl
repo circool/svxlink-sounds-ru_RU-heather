@@ -30,7 +30,7 @@ namespace eval MetarInfo {
 
   # Обрабатывает строки с несколькими значениями, например пара значение-единица измерения
   proc handleMultiplyReports {args {anounce ""}} {
-
+    
     # Если анонс не пустой, воспроизводим его
     if {$anounce ne ""} {
       playMsg $anounce
