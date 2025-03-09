@@ -27,7 +27,7 @@ proc runTest { value gender expected } {
 		return 0  
 		# Возвращаем 0 для успешного теста
 	} else {
-		puts "Тест не пройден: ожидалось '$expected', получено '$result'"
+		puts "Тест ($value $gender) не пройден: ожидалось '$expected', получено '$result'"
 		return 1  
 		# Возвращаем 1 для неудачного теста
 	}
@@ -49,7 +49,7 @@ if {[runTest "1" "neuter" "одно"]} { set testFailed 1 }
 if {[runTest "1" "female" "одна"]} { set testFailed 1 }
 if {[runTest "2" "male" "два"]} { set testFailed 1 }
 if {[runTest "2" "female" "две"]} { set testFailed 1 }
-if {[runTest "2" "female" "два"]} { set testFailed 1 }
+if {[runTest "2" "neuter" "два"]} { set testFailed 1 }
 if {[runTest "5" "neuter" "пять"]} { set testFailed 1 }
 if {[runTest "10" "male" "десять"]} { set testFailed 1 }
 if {[runTest "11" "female" "одиннадцать"]} { set testFailed 1 }
@@ -114,6 +114,7 @@ if {[runTest "999" "male" "девятьсот девяносто девять"]}
 if {[runTest "1001" "female" "одна тысяча одна"]} { set testFailed 1 }
 if {[runTest "999.99" "neuter" "девятьсот девяносто девять целых и девяносто девять сотых"]} { set testFailed 1 }
 if {[runTest "100000" "male" "сто тысяч"]} { set testFailed 1 }
+if {[runTest "88.5" "male" "восемьдесят восемь целых и пять десятых"]} { set testFailed 1 }
 
 # Итоговое сообщение
 if {$testFailed} {
