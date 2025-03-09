@@ -26,7 +26,7 @@ proc playTime {hour minute} {
 		playNumberRu $minute "female"
 		playUnit "Default" $minute "minute"
 	} else {
-		playMsg "Default" "ровно"
+		playMsg "Default" "equal"
 	}
 
 	# Добавление am/pm для 12-часового формата

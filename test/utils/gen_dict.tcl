@@ -22,12 +22,21 @@ proc createWordMap {dir recursive} {
 	set wordMap {}
 	set txtFiles [findFiles $dir *.txt $recursive]
 
+	if {[llength $txtFiles] == 0} {
+		puts "Внимание: файлы .txt не найдены в директории $dir"
+		return $wordMap
+	}
+
 	foreach file $txtFiles {
 		set dirName [file tail [file dirname $file]]
 		set fileName [file rootname [file tail $file]]
 		set content [readFile $file]
 
-		dict set wordMap $dirName $fileName $content
+		if {[llength $content] == 0} {
+			puts "Внимание: файл $file пуст или содержит только пустые строки"
+		} else {
+			dict set wordMap $dirName $fileName $content
+		}
 	}
 
 	return $wordMap
@@ -87,7 +96,7 @@ if {![file isdirectory $targetDir]} {
 }
 
 set wordMap [createWordMap $targetDir $recursive]
-set outputFile [file join [pwd] dict.tcl]  ;# Изменено на текущую директорию
+set outputFile [file join [pwd] dict.tcl]  ;# Файл создаётся в текущей директории
 saveWordMap $wordMap $outputFile
 
 puts "Словарь успешно сохранен в $outputFile"
