@@ -87,7 +87,7 @@ if {![file isdirectory $targetDir]} {
 }
 
 set wordMap [createWordMap $targetDir $recursive]
-set outputFile [file join [file dirname [info script]] dict.tcl]
+set outputFile [file join [pwd] dict.tcl]  ;# Изменено на текущую директорию
 saveWordMap $wordMap $outputFile
 
 puts "Словарь успешно сохранен в $outputFile"

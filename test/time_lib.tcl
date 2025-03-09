@@ -2,8 +2,8 @@
 # Библиотека процедур для работы с временем
 
 proc playTime {hour minute} {
-	# variable Logic::CFG_TIME_FORMAT
 	global CFG_TIME_FORMAT
+
 	# Установить формат часа и время суток для 12-часового формата
 	if {$CFG_TIME_FORMAT == 12} {
 		if {$hour == 0} {
@@ -19,13 +19,14 @@ proc playTime {hour minute} {
 		}
 	}
 
-	playNumberRu $hour "male";
-	playUnit "Default" $hour "hour";
+	# Проигрываем часы и минуты
+	playNumberRu $hour "male"
+	playUnit "Default" $hour "hour"
 	if {$minute != 0} {
-		playNumberRu $minute "female";
-		playUnit "Default" $minute "minute";
+		playNumberRu $minute "female"
+		playUnit "Default" $minute "minute"
 	} else {
-		playMsg "Default" "equal"
+		playMsg "Default" "ровно"
 	}
 
 	# Добавление am/pm для 12-часового формата
