@@ -1,5 +1,5 @@
-![Статус проекта](https://img.shields.io/badge/Статус-Активный-brightgreen?style=flat)
-![Версия](https://img.shields.io/badge/Версия-1.4.2-blue?style=flat)
+![Статус проекта](https://img.shields.io/badge/Статус-В_работе-brightgreen?style=flat)
+![Версия](https://img.shields.io/badge/Версия-1.4.3-blue?style=flat)
 ![Лицензия](https://img.shields.io/badge/Лицензия-MIT-green?style=flat)
 
 ![Circool's GitHub stats](https://github-readme-stats.vercel.app/api?username=circool&show=reviews,discussions_started,discussions_answered,prs_merged,prs_merged_percentage)
