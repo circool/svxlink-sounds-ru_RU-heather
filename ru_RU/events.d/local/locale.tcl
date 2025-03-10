@@ -6,20 +6,25 @@
 proc playTime {hour minute} {
 	
 	variable Logic::CFG_TIME_FORMAT
-	# Установить формат часа и время суток для 12-часового формата
-	if {$CFG_TIME_FORMAT == 12} {
-		if {$hour == 0} {
-			set hour 12
-			set ampm "AM"
-		} elseif {$hour < 12} {
-			set ampm "AM"
-		} else {
-			if {$hour > 12} {
-				set hour [expr {$hour - 12}]
+
+	if {[info exists Logic::CFG_TIME_FORMAT]} {
+		# Установить формат часа и время суток для 12-часового формата
+		if {$CFG_TIME_FORMAT == 12} {
+			if {$hour == 0} {
+				set hour 12
+				set ampm "AM"
+			} elseif {$hour < 12} {
+				set ampm "AM"
+			} else {
+				if {$hour > 12} {
+					set hour [expr {$hour - 12}]
+				}
+				set ampm "PM"
 			}
-			set ampm "PM"
-		}
+		}	
 	}
+
+	
 
 	playNumberRu $hour "male";
 	playUnit "Default" $hour "hour";
@@ -29,11 +34,13 @@ proc playTime {hour minute} {
 	} else {
 		playMsg "Default" "equal"
 	}
-
-	# Добавление am/pm для 12-часового формата
-	if {$CFG_TIME_FORMAT == 12} {
-		playMsg "Core" "$ampm"
+	if {[info exists Logic::CFG_TIME_FORMAT]} {
+		# Добавление am/pm для 12-часового формата
+		if {$CFG_TIME_FORMAT == 12} {
+			playMsg "Core" "$ampm"
+		}	
 	}
+	
 }
 
 
@@ -119,7 +126,6 @@ proc playUnit {modulename value unit} {
 }
 
 
-
 # Процедура для воспроизведения числа на русском языке
 proc playNumberRu { value gender } {
 	# Разделение числа на целую и дробную части
@@ -200,3 +206,6 @@ proc playNumberRu { value gender } {
 	}
 }
 
+proc putText { text } {
+	
+}
