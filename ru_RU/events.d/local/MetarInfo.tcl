@@ -6,6 +6,12 @@
 # MetarInfo
 namespace eval MetarInfo {
 
+  proc activating_module {} {
+    # variable module_name;
+    # Module::activating_module $module_name;
+  }
+
+
   # Это "перегруженная" форма вызова playUnit которая использует текущее простаранство имен как первый параметр,
   # позволяя упростить вызов из текущего пространства, не указывая модуль из которого она вызывается
   #
@@ -79,6 +85,30 @@ namespace eval MetarInfo {
       }
     }
     playSilence 200
+  }
+
+  # Выделение из строки выражений [.._от] ... до ... [unit_единицы]
+  proc split_string {input} {
+
+    set pattern {([a-z]+_from\s\d+\s*to\s*\d+\s*unit_[a-z]+)}
+
+    # Разбиваем строку на части
+    set result [regexp -all -inline $pattern $input]
+    puts "Результат разбивки: $result"
+    # Если найдено совпадение
+    if {[llength $result] > 0} {
+      # Получаем основной блок
+      set main_block [lindex $result 0]
+
+      # Получаем текст до и после основного блока
+      set before [string range $input 0 [expr {[string first $main_block $input] - 1}]]
+      set after [string range $input [expr {[string first $main_block $input] + [string length $main_block]}] end]
+
+      # Возвращаем результат в виде списка
+      return [list $before $main_block $after]
+    } else {
+      return {}
+    }
   }
 
 
@@ -198,7 +228,7 @@ namespace eval MetarInfo {
 
   # wind
   proc wind {deg {vel 0 } {unit 0} {gusts 0} {gvel 0}} {
-    # puts "wind: deg=$deg vel=$vel unit=$unit gusts=$gusts gvel=$gvel"
+    puts "wind: deg=$deg vel=$vel unit=$unit gusts=$gusts gvel=$gvel"
     set vel [scan $vel %d]
     set gusts [scan $gusts %d]
 
@@ -235,14 +265,14 @@ namespace eval MetarInfo {
   # weather actually
   # Несколько пар значений без анонса
   proc actualWX args {
-    # puts "actualWX: $args"
+    puts "actualWX: $args"
     handleMultiplyReports $args ""
   }
 
-
+  # Диапазон значений от ... до ...
   # wind varies $from $to
   proc windvaries {from to} {
-    # puts "windvaries: $from $to"
+    puts "windvaries: $from $to"
     playMsg "wind"
     playSilence 50
     playMsg "varies_from"
@@ -260,7 +290,7 @@ namespace eval MetarInfo {
   # Peak WIND
   # Перегрузка peakwind?
   proc peakwind {deg kts hh mm} {
-    # puts "peakwind: $deg $kts $hh $mm"
+    puts "peakwind: $deg $kts $hh $mm"
     playMsg "pk_wnd"
     playMsg "from"
     playSilence 100
@@ -279,10 +309,10 @@ namespace eval MetarInfo {
     playSilence 200
   }
 
-
+  # Диапазон значений от ... до ...
   # ceiling varies $from $to
   proc ceilingvaries {from to} {
-    #  puts "ceiling varies $from $to"
+    puts "ceiling varies $from $to"
     playMsg "ca"
     playSilence 50
     playMsg "varies_from"
@@ -315,7 +345,7 @@ namespace eval MetarInfo {
   # runway visual range
   # Несколько аргументов без анонса
   proc rvr args {
-    # puts "rvr: $args"
+    puts "rvr: $args"
     handleMultiplyReports $args ""
   }
 
@@ -328,7 +358,7 @@ namespace eval MetarInfo {
 
   # time
   proc utime {utime} {
-    # puts "utime: $utime"
+    puts "utime: $utime"
     set hr [string range $utime 0 1]
     set mn [string range $utime 2 3]
     playTime $hr $mn
@@ -339,7 +369,7 @@ namespace eval MetarInfo {
 
   # vv100 -> "vertical view (ceiling) 1000 feet"
   proc ceiling {param} {
-    # puts "ceiling: $param"
+    puts "ceiling: $param"
     playMsg "ca"
     playSilence 100
     playNumberRu $param "male"
@@ -349,7 +379,7 @@ namespace eval MetarInfo {
 
   # QNH
   proc qnh {value} {
-    # puts "qnh: $value"
+    puts "qnh: $value"
     playMsg "qnh"
     playNumberRu $value "male"
     playUnit $value "unit_hPa"
@@ -358,7 +388,7 @@ namespace eval MetarInfo {
 
   # altimeter
   proc altimeter {value} {
-    # puts "altimeter: $value"
+    puts "altimeter: $value"
     playMsg "altimeter"
     playSilence 100
     playNumberRu $value "male"

@@ -50,3 +50,30 @@ namespace eval ReflectorLogic {
 
 
 }
+
+proc report_tg_status {} {
+  variable selected_tg
+  variable previous_tg
+  variable prev_announce_time
+  variable prev_announce_tg
+  variable reflector_connection_established
+  playSilence 100
+  playMsg "Core" "reflector"
+  if {$reflector_connection_established} {
+    playMsg "Core" "connected"
+  } else {
+    playMsg "Core" "disconnected"
+  }
+  playSilence 200
+  if {$selected_tg > 0} {
+    set prev_announce_time [clock seconds]
+    set prev_announce_tg $selected_tg
+    playMsg "Core" "talk_group"
+    say_talkgroup $selected_tg
+  } else {
+    playMsg "Core" "previous"
+    playMsg "Core" "talk_group"
+    playSilence 50
+    say_talkgroup $previous_tg
+  }
+}
