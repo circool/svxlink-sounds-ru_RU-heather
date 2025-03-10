@@ -4,22 +4,27 @@
 
 # Время
 proc playTime {hour minute} {
-	
+
 	variable Logic::CFG_TIME_FORMAT
-	# Установить формат часа и время суток для 12-часового формата
-	if {$CFG_TIME_FORMAT == 12} {
-		if {$hour == 0} {
-			set hour 12
-			set ampm "AM"
-		} elseif {$hour < 12} {
-			set ampm "AM"
-		} else {
-			if {$hour > 12} {
-				set hour [expr {$hour - 12}]
+
+	if {[info exists Logic::CFG_TIME_FORMAT]} {
+		# Установить формат часа и время суток для 12-часового формата
+		if {$CFG_TIME_FORMAT == 12} {
+			if {$hour == 0} {
+				set hour 12
+				set ampm "AM"
+			} elseif {$hour < 12} {
+				set ampm "AM"
+			} else {
+				if {$hour > 12} {
+					set hour [expr {$hour - 12}]
+				}
+				set ampm "PM"
 			}
-			set ampm "PM"
 		}
 	}
+
+
 
 	playNumberRu $hour "male";
 	playUnit "Default" $hour "hour";
@@ -29,11 +34,13 @@ proc playTime {hour minute} {
 	} else {
 		playMsg "Default" "equal"
 	}
-
-	# Добавление am/pm для 12-часового формата
-	if {$CFG_TIME_FORMAT == 12} {
-		playMsg "Core" "$ampm"
+	if {[info exists Logic::CFG_TIME_FORMAT]} {
+		# Добавление am/pm для 12-часового формата
+		if {$CFG_TIME_FORMAT == 12} {
+			playMsg "Core" "$ampm"
+		}
 	}
+
 }
 
 
@@ -119,7 +126,6 @@ proc playUnit {modulename value unit} {
 }
 
 
-
 # Процедура для воспроизведения числа на русском языке
 proc playNumberRu { value gender } {
 	# Разделение числа на целую и дробную части
@@ -149,7 +155,7 @@ proc playNumberRu { value gender } {
 
 	# Обработка тысяч
 	if {$thousands > 0} {
-		playNumberBlock $thousands "female"  
+		playNumberBlock $thousands "female"
 		# Тысячи всегда женского рода
 		playUnit "Default" $thousands "thousand"
 	}
@@ -158,15 +164,15 @@ proc playNumberRu { value gender } {
 	if {$units > 0 || ($thousands == 0 && ($fractionalPart eq "" || $fractionalPart == 0))} {
 		# Если есть дробная часть, род целой части должен быть женским
 		if {$fractionalPart ne "" && $fractionalPart != 0} {
-			playNumberBlock $units "female"  
+			playNumberBlock $units "female"
 			# Женский род для целой части
 		} else {
-			playNumberBlock $units $gender  
+			playNumberBlock $units $gender
 			# Общий род для целых чисел
 		}
 
 		if {$fractionalPart ne "" && $fractionalPart != 0} {
-			playUnit "Default" $units "integer"  
+			playUnit "Default" $units "integer"
 			# "целых"
 		}
 	}
@@ -183,20 +189,23 @@ proc playNumberRu { value gender } {
 		set fractionalNum [scan $fractionalPart "%d"]
 		set lastDigit [expr {$fractionalNum % 10}]
 		if {$lastDigit == 1 || $lastDigit == 2} {
-			playNumberBlock $fractionalNum "female"  
+			playNumberBlock $fractionalNum "female"
 			# Женский род для дробной части
 		} else {
-			playNumberBlock $fractionalNum $gender  
+			playNumberBlock $fractionalNum $gender
 			# Общий род для дробной части
 		}
 
 		if {[string length $fractionalPart] == 1} {
-			playUnit "Default" $fractionalNum "tenth"  
+			playUnit "Default" $fractionalNum "tenth"
 			# "десятых"
 		} else {
-			playUnit "Default" $fractionalNum "hundredth"  
+			playUnit "Default" $fractionalNum "hundredth"
 			# "сотых"
 		}
 	}
 }
 
+proc putText { text } {
+
+}
