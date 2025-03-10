@@ -1,10 +1,10 @@
 # Тесты
 
-## moc_test_digits.tcl
+## mock_test_digits.tcl
 
 Проверка произношения чисел
 
-## moc_test_time.tcl
+## mock_test_time.tcl
 
 Проверка произношения времени
 
