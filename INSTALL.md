@@ -16,3 +16,4 @@ cd /usr/share/svxlink/sound/
 git clone https://github.com/circool/svxlink-sounds-ru_RU-milana
 ```
 3. Задайте параметр **DEFAULT_LANG=ru_RU** в разделе указанном в параметре **LOGICS** раздела **[GLOBAL]**
+4. Установите формат времени (12/24) в переменной TIME_FORMAT в разделе [...Logic] конфигурационного файла svxlink.conf
