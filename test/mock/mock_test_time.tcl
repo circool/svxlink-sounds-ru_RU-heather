@@ -2,6 +2,7 @@
 
 # Процедура для запуска timeTest.tcl с заданными параметрами
 # Возвращает 1, если тест не пройден, и 0, если тест пройден успешно
+
 proc runTimeTest { hour minute expected format } {
 	# Форматируем строку с ожидаемым результатом
 	set expectedLabel "Ожидаемый результат:  "
@@ -9,7 +10,7 @@ proc runTimeTest { hour minute expected format } {
 	# puts $expectedFormatted
 
 	# Запускаем timeTest.tcl и захватываем его вывод
-	set result [exec ./timeTest.tcl $hour $minute $format]
+	set result [exec ../timeTest.tcl $hour $minute $format]
 
 	# Удаляем пробелы в конце результата
 	set result [string trimright $result]

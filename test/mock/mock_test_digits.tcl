@@ -11,7 +11,7 @@ proc runTest { value gender expected } {
 	# puts $expectedFormatted
 
 	# Запускаем numberTest.tcl и захватываем его вывод
-	set result [exec ./numberTest.tcl $value $gender]
+	set result [exec ../numberTest.tcl $value $gender]
 
 	# Удаляем пробелы в конце результата
 	set result [string trimright $result]

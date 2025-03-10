@@ -2,8 +2,8 @@
 # Оболочка для тестирования процедуры playTime
 
 # Исходные процедуры
-source "numbers_lib.tcl"
-source "time_lib.tcl"
+source "../numbers_lib.tcl"
+source "../time_lib.tcl"
 
 # Процедура для получения параметров из командной строки
 proc main {} {

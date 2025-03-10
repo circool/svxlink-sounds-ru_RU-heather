@@ -1,7 +1,7 @@
 #!/usr/bin/env tclsh
 
 # Исходные процедуры
-source "numbers_lib.tcl"
+source "../numbers_lib.tcl"
 
 
 # Процедура для получения параметров из командной строки и вызова playNumberRu
